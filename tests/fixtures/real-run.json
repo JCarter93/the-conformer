@@ -1,0 +1,1085 @@
+{
+ "plan": [
+  {
+   "start": 25.56,
+   "in": 6.36,
+   "dur": 0.24,
+   "source": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/Day_001/A_Cam_Rushes_2025/A004_Rushes_2025/A004C0018_700101_68LK07.MOV",
+   "trackIndex": 0,
+   "stem": "A004C0018_700101_68LK07",
+   "status": "AMBIGUOUS",
+   "candidates": [
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0001_A004C0018_700101_68LK07.mov",
+     "name": "V1-0001_A004C0018_700101_68LK07.mov",
+     "folder": "260407",
+     "retrimmed": true,
+     "sourceIn": 0.0,
+     "method": "needs frame match",
+     "gradedDur": 0.32,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    },
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2-0003_A004C0018_700101_68LK07.mov",
+     "name": "V2-0003_A004C0018_700101_68LK07.mov",
+     "folder": "260407",
+     "retrimmed": false,
+     "method": "timecode",
+     "gradedDur": 3.95,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320,
+     "sourceIn": 0.0
+    }
+   ],
+   "sourceWidth": 7680,
+   "sourceHeight": 4320
+  },
+  {
+   "start": 36.2,
+   "in": 8.84,
+   "dur": 15.92,
+   "source": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/1. Day_002/A_Cam_Rushes_2025/A007_Rushes_2025/A007C0016_700101_68LK10.MOV",
+   "trackIndex": 0,
+   "stem": "A007C0016_700101_68LK10",
+   "status": "OK",
+   "graded": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0002_A007C0016_700101_68LK10.mov",
+   "candidates": [
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0002_A007C0016_700101_68LK10.mov",
+     "name": "V1-0002_A007C0016_700101_68LK10.mov",
+     "folder": "260407"
+    }
+   ],
+   "sourceWidth": 7680,
+   "sourceHeight": 4320,
+   "gradedDur": 17.71,
+   "gradedWidth": 7680,
+   "gradedHeight": 4320,
+   "handleDiff": 1.79,
+   "tcCheck": {
+    "usable": true,
+    "startTc": "00:06:14:05",
+    "sourceStartTc": "00:06:05:13",
+    "dropFrame": false,
+    "impliedOffset": 0.16,
+    "inRange": true
+   },
+   "sourceIn": 0.16,
+   "method": "timecode"
+  },
+  {
+   "start": 57.52,
+   "in": 7.64,
+   "dur": 7.72,
+   "source": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/1. Day_002/A_Cam_Rushes_2025/A008_Rushes_2025/A008C0013_700101_68LK11.MOV",
+   "trackIndex": 0,
+   "stem": "A008C0013_700101_68LK11",
+   "status": "OK",
+   "graded": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0003_A008C0013_700101_68LK11.mov",
+   "candidates": [
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0003_A008C0013_700101_68LK11.mov",
+     "name": "V1-0003_A008C0013_700101_68LK11.mov",
+     "folder": "260407"
+    }
+   ],
+   "sourceWidth": 7680,
+   "sourceHeight": 4320,
+   "gradedDur": 8.28,
+   "gradedWidth": 7680,
+   "gradedHeight": 4320,
+   "handleDiff": 0.56,
+   "tcCheck": {
+    "usable": true,
+    "startTc": "00:05:42:15",
+    "sourceStartTc": "00:05:35:02",
+    "dropFrame": false,
+    "impliedOffset": 0.12,
+    "inRange": true
+   },
+   "sourceIn": 0.12,
+   "method": "timecode"
+  },
+  {
+   "start": 65.24,
+   "in": 0,
+   "dur": 3.68,
+   "source": "/Volumes/JOB_1/1000_Client_Launch/2_AfterEffects/3_Renders/260323/A008C0028_Track_COMP_V4.mov",
+   "trackIndex": 0,
+   "stem": "A008C0028_Track_COMP_V4",
+   "status": "SUPERSEDED",
+   "graded": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2/V1-0007_A008C0028_Track_COMP_V4.mov",
+   "candidates": [
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0004_A008C0028_Track_COMP_V4.mov",
+     "name": "V1-0004_A008C0028_Track_COMP_V4.mov",
+     "folder": "260407",
+     "retrimmed": false,
+     "sourceIn": 0.0,
+     "method": "timecode",
+     "gradedDur": 3.68,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    },
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2/V1-0007_A008C0028_Track_COMP_V4.mov",
+     "name": "V1-0007_A008C0028_Track_COMP_V4.mov",
+     "folder": "V2",
+     "chosen": true,
+     "retrimmed": false,
+     "sourceIn": 0.0,
+     "method": "timecode",
+     "gradedDur": 3.68,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    }
+   ],
+   "sourceWidth": 7680,
+   "sourceHeight": 4320,
+   "gradedDur": 3.68,
+   "gradedWidth": 7680,
+   "gradedHeight": 4320,
+   "handleDiff": 0.0,
+   "tcCheck": {
+    "usable": true,
+    "startTc": "00:09:47:15",
+    "sourceStartTc": "00:09:47:15",
+    "dropFrame": false,
+    "impliedOffset": 0.0,
+    "inRange": true
+   },
+   "sourceIn": 0.0,
+   "method": "timecode"
+  },
+  {
+   "start": 68.92,
+   "in": 15.76,
+   "dur": 2.92,
+   "source": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/1. Day_002/A_Cam_Rushes_2025/A008_Rushes_2025/A008C0028_700101_68LK11.MOV",
+   "trackIndex": 0,
+   "stem": "A008C0028_700101_68LK11",
+   "status": "OK",
+   "graded": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0005_A008C0028_700101_68LK11.mov",
+   "candidates": [
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0005_A008C0028_700101_68LK11.mov",
+     "name": "V1-0005_A008C0028_700101_68LK11.mov",
+     "folder": "260407"
+    }
+   ],
+   "sourceWidth": 7680,
+   "sourceHeight": 4320,
+   "gradedDur": 3.07,
+   "gradedWidth": 7680,
+   "gradedHeight": 4320,
+   "handleDiff": 0.15,
+   "tcCheck": {
+    "usable": true,
+    "startTc": "00:10:03:09",
+    "sourceStartTc": "00:09:47:15",
+    "dropFrame": false,
+    "impliedOffset": 0.0,
+    "inRange": true
+   },
+   "sourceIn": 0.0,
+   "method": "timecode"
+  },
+  {
+   "start": 7.32,
+   "in": 6.12,
+   "dur": 4.2,
+   "source": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/Day_001/A_Cam_Rushes_2025/A002_Rushes_2025/A002_68LK05/A002C0016_700101_68LK05.MOV",
+   "trackIndex": 1,
+   "stem": "A002C0016_700101_68LK05",
+   "status": "SUPERSEDED",
+   "graded": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260409/V1-0008_A002C0016_700101_68LK05.mov",
+   "candidates": [
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2-0001_A002C0016_700101_68LK05.mov",
+     "name": "V2-0001_A002C0016_700101_68LK05.mov",
+     "folder": "260407",
+     "retrimmed": true,
+     "sourceIn": 0.12,
+     "method": "needs frame match",
+     "gradedDur": 4.84,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    },
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V4-0002_A002C0016_700101_68LK05.mov",
+     "name": "V4-0002_A002C0016_700101_68LK05.mov",
+     "folder": "260407",
+     "retrimmed": true,
+     "method": "needs frame match",
+     "gradedDur": 2.94,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    },
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260409/V1-0008_A002C0016_700101_68LK05.mov",
+     "name": "V1-0008_A002C0016_700101_68LK05.mov",
+     "folder": "260409",
+     "chosen": true,
+     "retrimmed": false,
+     "sourceIn": 4.32,
+     "method": "timecode",
+     "gradedDur": 7.47,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    }
+   ],
+   "sourceWidth": 7680,
+   "sourceHeight": 4320,
+   "gradedDur": 7.47,
+   "gradedWidth": 7680,
+   "gradedHeight": 4320,
+   "handleDiff": 3.27,
+   "tcCheck": {
+    "usable": true,
+    "startTc": "00:04:22:01",
+    "sourceStartTc": "00:04:16:01",
+    "dropFrame": false,
+    "impliedOffset": 0.12,
+    "inRange": true
+   },
+   "sourceIn": 0.12,
+   "method": "timecode"
+  },
+  {
+   "start": 19.76,
+   "in": 0.88,
+   "dur": 6.04,
+   "source": "/Volumes/JOB_1/1000_Client_Launch/2_AfterEffects/3_Renders/260323/A004C0013_Wipe_COMP_V2.mov",
+   "trackIndex": 1,
+   "stem": "A004C0013_Wipe_COMP_V2",
+   "status": "OK",
+   "graded": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2-0002_A004C0013_Wipe_COMP_V2.mov",
+   "candidates": [
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2-0002_A004C0013_Wipe_COMP_V2.mov",
+     "name": "V2-0002_A004C0013_Wipe_COMP_V2.mov",
+     "folder": "260407"
+    }
+   ],
+   "sourceWidth": 1920,
+   "sourceHeight": 1080,
+   "gradedDur": 6.04,
+   "gradedWidth": 7680,
+   "gradedHeight": 4320,
+   "handleDiff": 0.0,
+   "tcCheck": {
+    "usable": true,
+    "startTc": "00:05:38:22",
+    "sourceStartTc": "00:05:38:00",
+    "dropFrame": false,
+    "impliedOffset": 0.0,
+    "inRange": true
+   },
+   "sourceIn": 0.0,
+   "method": "timecode"
+  },
+  {
+   "start": 25.8,
+   "in": 6.6,
+   "dur": 3.88,
+   "source": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/Day_001/A_Cam_Rushes_2025/A004_Rushes_2025/A004C0018_700101_68LK07.MOV",
+   "trackIndex": 1,
+   "stem": "A004C0018_700101_68LK07",
+   "status": "AMBIGUOUS",
+   "candidates": [
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0001_A004C0018_700101_68LK07.mov",
+     "name": "V1-0001_A004C0018_700101_68LK07.mov",
+     "folder": "260407",
+     "retrimmed": true,
+     "sourceIn": 0.0,
+     "method": "needs frame match",
+     "gradedDur": 0.32,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    },
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2-0003_A004C0018_700101_68LK07.mov",
+     "name": "V2-0003_A004C0018_700101_68LK07.mov",
+     "folder": "260407",
+     "retrimmed": false,
+     "method": "timecode",
+     "gradedDur": 3.95,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320,
+     "sourceIn": 0.0
+    }
+   ],
+   "sourceWidth": 7680,
+   "sourceHeight": 4320
+  },
+  {
+   "start": 0,
+   "in": 1.8,
+   "dur": 8.92,
+   "source": "/Volumes/JOB_1/1000_Client_Launch/2_AfterEffects/3_Renders/260323/A001C0016_Cleanup_COMP_V5.mov",
+   "trackIndex": 2,
+   "stem": "A001C0016_Cleanup_COMP_V5",
+   "status": "OK",
+   "graded": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V3-0001_A001C0016_Cleanup_COMP_V5.mov",
+   "candidates": [
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V3-0001_A001C0016_Cleanup_COMP_V5.mov",
+     "name": "V3-0001_A001C0016_Cleanup_COMP_V5.mov",
+     "folder": "260407"
+    }
+   ],
+   "sourceWidth": 7680,
+   "sourceHeight": 4320,
+   "gradedDur": 8.92,
+   "gradedWidth": 7680,
+   "gradedHeight": 4320,
+   "handleDiff": 0.0,
+   "tcCheck": {
+    "usable": true,
+    "startTc": "17:19:46:18",
+    "sourceStartTc": "17:19:44:23",
+    "dropFrame": false,
+    "impliedOffset": -0.0,
+    "inRange": true
+   },
+   "sourceIn": 0.0,
+   "method": "timecode"
+  },
+  {
+   "start": 13.24,
+   "in": 0.72,
+   "dur": 6.96,
+   "source": "/Volumes/JOB_1/1000_Client_Launch/2_AfterEffects/3_Renders/260323/A003C0017_Replace_COMP_V2.mov",
+   "trackIndex": 2,
+   "stem": "A003C0017_Replace_COMP_V2",
+   "status": "SUPERSEDED",
+   "graded": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2/V3-0003_A003C0017_Replace_COMP_V2.mov",
+   "candidates": [
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V3-0002_A003C0017_Replace_COMP_V2.mov",
+     "name": "V3-0002_A003C0017_Replace_COMP_V2.mov",
+     "folder": "260407",
+     "retrimmed": false,
+     "sourceIn": 0.0,
+     "method": "timecode",
+     "gradedDur": 6.96,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    },
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2/V3-0003_A003C0017_Replace_COMP_V2.mov",
+     "name": "V3-0003_A003C0017_Replace_COMP_V2.mov",
+     "folder": "V2",
+     "chosen": true,
+     "retrimmed": false,
+     "sourceIn": 0.0,
+     "method": "timecode",
+     "gradedDur": 7.04,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    }
+   ],
+   "sourceWidth": 7680,
+   "sourceHeight": 4320,
+   "gradedDur": 7.04,
+   "gradedWidth": 7680,
+   "gradedHeight": 4320,
+   "handleDiff": 0.08,
+   "tcCheck": {
+    "usable": true,
+    "startTc": "00:13:13:04",
+    "sourceStartTc": "00:13:12:11",
+    "dropFrame": false,
+    "impliedOffset": 0.0,
+    "inRange": true
+   },
+   "sourceIn": 0.0,
+   "method": "timecode"
+  },
+  {
+   "start": 11.52,
+   "in": 10.32,
+   "dur": 2.12,
+   "source": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/Day_001/A_Cam_Rushes_2025/A002_Rushes_2025/A002_68LK05/A002C0016_700101_68LK05.MOV",
+   "trackIndex": 3,
+   "stem": "A002C0016_700101_68LK05",
+   "status": "SUPERSEDED",
+   "graded": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260409/V1-0008_A002C0016_700101_68LK05.mov",
+   "candidates": [
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2-0001_A002C0016_700101_68LK05.mov",
+     "name": "V2-0001_A002C0016_700101_68LK05.mov",
+     "folder": "260407",
+     "retrimmed": true,
+     "sourceIn": 0.12,
+     "method": "needs frame match",
+     "gradedDur": 4.84,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    },
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V4-0002_A002C0016_700101_68LK05.mov",
+     "name": "V4-0002_A002C0016_700101_68LK05.mov",
+     "folder": "260407",
+     "retrimmed": true,
+     "method": "needs frame match",
+     "gradedDur": 2.94,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    },
+    {
+     "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260409/V1-0008_A002C0016_700101_68LK05.mov",
+     "name": "V1-0008_A002C0016_700101_68LK05.mov",
+     "folder": "260409",
+     "chosen": true,
+     "retrimmed": false,
+     "sourceIn": 4.32,
+     "method": "timecode",
+     "gradedDur": 7.47,
+     "gradedWidth": 7680,
+     "gradedHeight": 4320
+    }
+   ],
+   "sourceWidth": 7680,
+   "sourceHeight": 4320,
+   "gradedDur": 7.47,
+   "gradedWidth": 7680,
+   "gradedHeight": 4320,
+   "handleDiff": 5.35,
+   "tcCheck": {
+    "usable": true,
+    "startTc": "00:04:22:01",
+    "sourceStartTc": "00:04:16:01",
+    "dropFrame": false,
+    "impliedOffset": 4.32,
+    "inRange": true
+   },
+   "sourceIn": 4.32,
+   "method": "timecode"
+  }
+ ],
+ "clips": [
+  {
+   "trackIndex": 0,
+   "start": 25.56,
+   "dur": 0.24,
+   "srcIn": 6.36,
+   "path": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/Day_001/A_Cam_Rushes_2025/A004_Rushes_2025/A004C0018_700101_68LK07.MOV",
+   "name": "A004C0018_700101_68LK07.MOV",
+   "speed": 1,
+   "motion": {
+    "Position": {
+     "value": [
+      0.5,
+      0.5
+     ],
+     "keyframed": true
+    },
+    "Scale": {
+     "value": 25,
+     "keyframed": true
+    }
+   }
+  },
+  {
+   "trackIndex": 0,
+   "start": 36.2,
+   "dur": 15.92,
+   "srcIn": 8.84,
+   "path": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/1. Day_002/A_Cam_Rushes_2025/A007_Rushes_2025/A007C0016_700101_68LK10.MOV",
+   "name": "A007C0016_700101_68LK10.MOV",
+   "speed": 1,
+   "motion": {
+    "Position": {
+     "value": [
+      0.5,
+      0.5
+     ],
+     "keyframed": false
+    },
+    "Scale": {
+     "value": 27,
+     "keyframed": false
+    }
+   }
+  },
+  {
+   "trackIndex": 0,
+   "start": 57.52,
+   "dur": 7.72,
+   "srcIn": 7.64,
+   "path": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/1. Day_002/A_Cam_Rushes_2025/A008_Rushes_2025/A008C0013_700101_68LK11.MOV",
+   "name": "A008C0013_700101_68LK11.MOV",
+   "speed": 1,
+   "motion": {
+    "Position": {
+     "value": [
+      0.5,
+      0.5
+     ],
+     "keyframed": false
+    },
+    "Scale": {
+     "value": 100,
+     "keyframed": false
+    }
+   }
+  },
+  {
+   "trackIndex": 0,
+   "start": 65.24,
+   "dur": 3.68,
+   "srcIn": 0,
+   "path": "/Volumes/JOB_1/1000_Client_Launch/2_AfterEffects/3_Renders/260323/A008C0028_Track_COMP_V4.mov",
+   "name": "A008C0028_Track_COMP_V4.mov",
+   "speed": 1,
+   "motion": {
+    "Position": {
+     "value": [
+      0.5,
+      0.5
+     ],
+     "keyframed": false
+    },
+    "Scale": {
+     "value": 25,
+     "keyframed": false
+    }
+   }
+  },
+  {
+   "trackIndex": 0,
+   "start": 68.92,
+   "dur": 2.92,
+   "srcIn": 15.76,
+   "path": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/1. Day_002/A_Cam_Rushes_2025/A008_Rushes_2025/A008C0028_700101_68LK11.MOV",
+   "name": "A008C0028_700101_68LK11.MOV",
+   "speed": 1,
+   "motion": {
+    "Position": {
+     "value": [
+      0.5,
+      0.5
+     ],
+     "keyframed": false
+    },
+    "Scale": {
+     "value": 25,
+     "keyframed": false
+    }
+   }
+  },
+  {
+   "trackIndex": 1,
+   "start": 7.32,
+   "dur": 4.2,
+   "srcIn": 6.12,
+   "path": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/Day_001/A_Cam_Rushes_2025/A002_Rushes_2025/A002_68LK05/A002C0016_700101_68LK05.MOV",
+   "name": "A002C0016_700101_68LK05.MOV",
+   "speed": 1,
+   "motion": {
+    "Position": {
+     "value": [
+      0.5,
+      0.5
+     ],
+     "keyframed": false
+    },
+    "Scale": {
+     "value": 25,
+     "keyframed": false
+    }
+   }
+  },
+  {
+   "trackIndex": 1,
+   "start": 19.76,
+   "dur": 6.04,
+   "srcIn": 0.88,
+   "path": "/Volumes/JOB_1/1000_Client_Launch/2_AfterEffects/3_Renders/260323/A004C0013_Wipe_COMP_V2.mov",
+   "name": "A004C0013_Wipe_COMP_V2.mov",
+   "speed": 1,
+   "motion": {
+    "Position": {
+     "value": [
+      0.5,
+      0.5
+     ],
+     "keyframed": false
+    },
+    "Scale": {
+     "value": 100,
+     "keyframed": false
+    }
+   }
+  },
+  {
+   "trackIndex": 1,
+   "start": 25.8,
+   "dur": 3.88,
+   "srcIn": 6.6,
+   "path": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/Day_001/A_Cam_Rushes_2025/A004_Rushes_2025/A004C0018_700101_68LK07.MOV",
+   "name": "A004C0018_700101_68LK07.MOV",
+   "speed": 1,
+   "motion": {
+    "Position": {
+     "value": [
+      0.5,
+      0.5
+     ],
+     "keyframed": true
+    },
+    "Scale": {
+     "value": 25,
+     "keyframed": true
+    }
+   }
+  },
+  {
+   "trackIndex": 2,
+   "start": 0,
+   "dur": 8.92,
+   "srcIn": 1.8,
+   "path": "/Volumes/JOB_1/1000_Client_Launch/2_AfterEffects/3_Renders/260323/A001C0016_Cleanup_COMP_V5.mov",
+   "name": "A001C0016_Cleanup_COMP_V5.mov",
+   "speed": 1,
+   "motion": {
+    "Position": {
+     "value": [
+      0.5,
+      0.5
+     ],
+     "keyframed": false
+    },
+    "Scale": {
+     "value": 100,
+     "keyframed": false
+    }
+   }
+  },
+  {
+   "trackIndex": 2,
+   "start": 13.24,
+   "dur": 6.96,
+   "srcIn": 0.72,
+   "path": "/Volumes/JOB_1/1000_Client_Launch/2_AfterEffects/3_Renders/260323/A003C0017_Replace_COMP_V2.mov",
+   "name": "A003C0017_Replace_COMP_V2.mov",
+   "speed": 1,
+   "motion": {
+    "Position": {
+     "value": [
+      0.5,
+      0.5
+     ],
+     "keyframed": false
+    },
+    "Scale": {
+     "value": 25,
+     "keyframed": false
+    }
+   }
+  },
+  {
+   "trackIndex": 3,
+   "start": 11.52,
+   "dur": 2.12,
+   "srcIn": 10.32,
+   "path": "/Volumes/JOB_1/1000_Client_Launch/1_PremierePro/2_Media/Footage/Rushes/Day_001/A_Cam_Rushes_2025/A002_Rushes_2025/A002_68LK05/A002C0016_700101_68LK05.MOV",
+   "name": "A002C0016_700101_68LK05.MOV",
+   "speed": 1,
+   "motion": {
+    "Position": {
+     "value": [
+      0.5,
+      0.5
+     ],
+     "keyframed": false
+    },
+    "Scale": {
+     "value": 25,
+     "keyframed": false
+    }
+   }
+  }
+ ],
+ "verdicts": {
+  "fps": 25.0,
+  "verdicts": [
+   {
+    "key": "t2c0",
+    "start": 0,
+    "name": "V3-0001_A001C0016_Cleanup_COMP_V5.mov",
+    "planned": 0,
+    "method": "timecode",
+    "probes": [
+     {
+      "probe": 1.3379999999999999,
+      "offset": 0.0,
+      "score": 0.9203
+     },
+     {
+      "probe": 4.014,
+      "offset": 0.0,
+      "score": 0.8699
+     },
+     {
+      "probe": 6.6899999999999995,
+      "offset": 0.0,
+      "score": 0.8357
+     }
+    ],
+    "reframeNote": "compensated for a 300% punch-in",
+    "framing": "full frame",
+    "framingTried": {
+     "full frame": 0.9203,
+     "punch-in": 0.1814
+    },
+    "staticFraction": 1.0,
+    "verdict": "confirmed",
+    "measured": 0.0,
+    "notes": [
+     "the graded file is exactly the cut, so the offset can only be 0"
+    ]
+   },
+   {
+    "key": "t1c7320",
+    "start": 7.32,
+    "name": "V1-0008_A002C0016_700101_68LK05.mov",
+    "planned": 0.12,
+    "method": "timecode",
+    "probes": [
+     {
+      "probe": 0.63,
+      "offset": 0.12,
+      "score": 0.9465
+     },
+     {
+      "probe": 1.8900000000000001,
+      "offset": 0.12,
+      "score": 0.9249
+     },
+     {
+      "probe": 3.1500000000000004,
+      "offset": 0.32,
+      "score": 0.9368
+     }
+    ],
+    "framing": "full frame",
+    "staticFraction": 0.024,
+    "measured": 0.12,
+    "spread": 0.2,
+    "driftPerSecond": 0.0794,
+    "verdict": "retimed",
+    "note": "the match slides 7.9% across the cut - this clip is retimed, and a graded replacement would play at 100% and drift against picture"
+   },
+   {
+    "key": "t3c11520",
+    "start": 11.52,
+    "name": "V1-0008_A002C0016_700101_68LK05.mov",
+    "planned": 4.32,
+    "method": "timecode",
+    "probes": [
+     {
+      "probe": 0.318,
+      "offset": 4.64,
+      "score": 0.9425
+     },
+     {
+      "probe": 0.9540000000000001,
+      "offset": 4.72,
+      "score": 0.9508
+     },
+     {
+      "probe": 1.59,
+      "offset": 4.88,
+      "score": 0.938
+     }
+    ],
+    "framing": "full frame",
+    "staticFraction": 0.015,
+    "measured": 4.72,
+    "spread": 0.24,
+    "driftPerSecond": 0.1887,
+    "verdict": "retimed",
+    "note": "the match slides 18.9% across the cut - this clip is retimed, and a graded replacement would play at 100% and drift against picture"
+   },
+   {
+    "key": "t2c13240",
+    "start": 13.24,
+    "name": "V3-0003_A003C0017_Replace_COMP_V2.mov",
+    "planned": 0,
+    "method": "timecode",
+    "probes": [
+     {
+      "probe": 1.044,
+      "offset": 0.0,
+      "score": 0.911
+     },
+     {
+      "probe": 3.132,
+      "offset": 0.0,
+      "score": 0.8455
+     },
+     {
+      "probe": 5.22,
+      "offset": 0.0,
+      "score": 0.9683
+     }
+    ],
+    "framing": "full frame",
+    "staticFraction": 0.5,
+    "measured": 0.0,
+    "spread": 0.0,
+    "driftPerSecond": -0.0,
+    "verdict": "confirmed"
+   },
+   {
+    "key": "t1c19760",
+    "start": 19.76,
+    "name": "V2-0002_A004C0013_Wipe_COMP_V2.mov",
+    "planned": 0,
+    "method": "timecode",
+    "probes": [
+     {
+      "probe": 0.9059999999999999,
+      "offset": 0.0,
+      "score": 0.9447
+     },
+     {
+      "probe": 2.718,
+      "offset": 0.0,
+      "score": 0.9336
+     },
+     {
+      "probe": 4.53,
+      "offset": 0.0,
+      "score": 0.8721
+     }
+    ],
+    "reframeNote": "compensated for a 300% punch-in",
+    "framing": "full frame",
+    "framingTried": {
+     "full frame": 0.9447,
+     "punch-in": 0.4216
+    },
+    "staticFraction": 1.0,
+    "verdict": "confirmed",
+    "measured": 0.0,
+    "notes": [
+     "the graded file is exactly the cut, so the offset can only be 0"
+    ]
+   },
+   {
+    "key": "t0c36200",
+    "start": 36.2,
+    "name": "V1-0002_A007C0016_700101_68LK10.mov",
+    "planned": 0.16,
+    "method": "timecode",
+    "probes": [
+     {
+      "probe": 2.388,
+      "offset": 0.16,
+      "score": 0.9373
+     },
+     {
+      "probe": 7.164,
+      "offset": 0.36,
+      "score": 0.9
+     },
+     {
+      "probe": 11.94,
+      "offset": 0.96,
+      "score": 0.8678
+     }
+    ],
+    "reframeNote": "compensated for a 8% punch-in",
+    "framing": "punch-in",
+    "framingTried": {
+     "full frame": 0.7961,
+     "punch-in": 0.9373
+    },
+    "crop": 0.9259,
+    "staticFraction": 0.043,
+    "measured": 0.36,
+    "spread": 0.8,
+    "driftPerSecond": 0.0838,
+    "verdict": "retimed",
+    "note": "the match slides 8.4% across the cut - this clip is retimed, and a graded replacement would play at 100% and drift against picture"
+   },
+   {
+    "key": "t0c57520",
+    "start": 57.52,
+    "name": "V1-0003_A008C0013_700101_68LK11.mov",
+    "planned": 0.12,
+    "method": "timecode",
+    "probes": [
+     {
+      "probe": 1.158,
+      "offset": 0.12,
+      "score": 0.9273
+     },
+     {
+      "probe": 3.4739999999999998,
+      "offset": 0.12,
+      "score": 0.9492
+     },
+     {
+      "probe": 5.79,
+      "offset": 0.12,
+      "score": 0.9438
+     }
+    ],
+    "reframeNote": "compensated for a 300% punch-in",
+    "framing": "full frame",
+    "framingTried": {
+     "full frame": 0.9492,
+     "punch-in": 0.3712
+    },
+    "staticFraction": 0.062,
+    "measured": 0.12,
+    "spread": 0.0,
+    "driftPerSecond": 0.0,
+    "verdict": "confirmed"
+   },
+   {
+    "key": "t0c65240",
+    "start": 65.24,
+    "name": "V1-0007_A008C0028_Track_COMP_V4.mov",
+    "planned": 0,
+    "method": "timecode",
+    "probes": [
+     {
+      "probe": 0.552,
+      "offset": 0.0,
+      "score": 0.9546
+     },
+     {
+      "probe": 1.6560000000000001,
+      "offset": 0.0,
+      "score": 0.9277
+     },
+     {
+      "probe": 2.7600000000000002,
+      "offset": 0.0,
+      "score": 0.9778
+     }
+    ],
+    "framing": "full frame",
+    "staticFraction": 0.5,
+    "verdict": "confirmed",
+    "measured": 0.0,
+    "notes": [
+     "the graded file is exactly the cut, so the offset can only be 0"
+    ]
+   },
+   {
+    "key": "t0c68920",
+    "start": 68.92,
+    "name": "V1-0005_A008C0028_700101_68LK11.mov",
+    "planned": 0,
+    "method": "timecode",
+    "probes": [
+     {
+      "probe": 0.438,
+      "offset": 0.0,
+      "score": 0.9823
+     },
+     {
+      "probe": 1.314,
+      "offset": 0.0,
+      "score": 0.9599
+     },
+     {
+      "probe": 2.19,
+      "offset": 0.0,
+      "score": 0.9419
+     }
+    ],
+    "framing": "full frame",
+    "staticFraction": 0.167,
+    "measured": 0.0,
+    "spread": 0.0,
+    "driftPerSecond": -0.0,
+    "verdict": "confirmed"
+   },
+   {
+    "key": "t0c25560",
+    "start": 25.56,
+    "name": "V1-0001_A004C0018_700101_68LK07.mov",
+    "planned": null,
+    "method": "candidate bake-off",
+    "probes": [],
+    "candidates": [
+     {
+      "file": "V1-0001_A004C0018_700101_68LK07.mov",
+      "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0001_A004C0018_700101_68LK07.mov",
+      "duration": 0.32,
+      "framing": "full frame",
+      "bestScore": 0.9299,
+      "votes": 2,
+      "offset": 0.0
+     },
+     {
+      "file": "V2-0003_A004C0018_700101_68LK07.mov",
+      "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2-0003_A004C0018_700101_68LK07.mov",
+      "duration": 3.947,
+      "framing": "full frame",
+      "bestScore": null,
+      "votes": 2,
+      "impossible": "the cut would start 0.14s before this file does"
+     }
+    ],
+    "margin": 0.9299,
+    "driftPerSecond": 0.0,
+    "spread": 0.0,
+    "verdict": "resolved",
+    "chosenGraded": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0001_A004C0018_700101_68LK07.mov",
+    "chosenDur": 0.32,
+    "measured": 0.0,
+    "score": 0.9299,
+    "note": "V1-0001_A004C0018_700101_68LK07.mov is the only candidate that can be right - V2-0003_A004C0018_700101_68LK07.mov the cut would start 0.14s before this file does (it matched at 0.93)"
+   },
+   {
+    "key": "t1c25800",
+    "start": 25.8,
+    "name": "V2-0003_A004C0018_700101_68LK07.mov",
+    "planned": null,
+    "method": "candidate bake-off",
+    "probes": [],
+    "candidates": [
+     {
+      "file": "V1-0001_A004C0018_700101_68LK07.mov",
+      "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V1-0001_A004C0018_700101_68LK07.mov",
+      "duration": 0.32,
+      "skipped": "too short to hold this cut"
+     },
+     {
+      "file": "V2-0003_A004C0018_700101_68LK07.mov",
+      "path": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2-0003_A004C0018_700101_68LK07.mov",
+      "duration": 3.947,
+      "framing": "full frame",
+      "bestScore": 0.9265,
+      "votes": 2,
+      "offset": 0.016
+     }
+    ],
+    "margin": 0.9265,
+    "driftPerSecond": -0.0034,
+    "spread": 0.004,
+    "verdict": "resolved",
+    "chosenGraded": "/Volumes/JOB_1/1000_Client_Launch/4_DavinciResolve/Exports/260407/V2-0003_A004C0018_700101_68LK07.mov",
+    "chosenDur": 3.947,
+    "measured": 0.016,
+    "score": 0.9265,
+    "note": "V2-0003_A004C0018_700101_68LK07.mov is the only candidate that can be right - V1-0001_A004C0018_700101_68LK07.mov too short to hold this cut (it matched at 0.93)"
+   }
+  ]
+ },
+ "opts": {
+  "ticksPerFrame": 10160640000,
+  "frameWidth": 1920,
+  "frameHeight": 1080
+ }
+}

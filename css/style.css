@@ -1,0 +1,226 @@
+/* House style shared by the Premiere panels — The Consolidator, The Onliner and
+   The Conformer. Same team, same production context; three panels that should
+   not look like strangers. The palette, the note style and the report
+   formatting below are identical in all three, so a change to one is a change
+   to the family.
+   UXP supports a subset of CSS; this sticks to flexbox, colours and spacing. */
+
+:root {
+  --bg: #262626; --panel: #2e2e2e; --line: #1c1c1c; --text: #d8d8d8;
+  --muted: #aeaeae; --accent: #6ba4ff; --warn: #e8b455; --bad: #ef6f63;
+  /* For genuinely incidental text only - never a clip name or a reason. */
+  --faint: #8d8d8d;
+  --good: #57b85c;
+  --grade: #b47ae0;  /* violet - matches the Grade colour label */
+  --mix: #63b0d8;    /* cerulean - matches the Mix colour label */
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+  font-size: 11px; line-height: 1.45;
+}
+#app { display: flex; flex-direction: column; height: 100%; }
+
+header { padding: 10px 12px 8px; border-bottom: 1px solid var(--line); }
+h1 { font-size: 13px; margin: 0 0 2px; font-weight: 600; }
+.ver { color: var(--muted); font-weight: 400; font-size: 10px; }
+h2 {
+  font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); margin: 0 0 6px; font-weight: 600;
+}
+
+.scroll { flex: 1; overflow-y: auto; padding: 4px 12px 12px; }
+section { padding: 10px 0; border-bottom: 1px solid var(--line); }
+section:last-child { border-bottom: 0; }
+
+/* The colour bar makes it obvious at a glance which section is live. */
+#secGrade.on { border-left: 2px solid var(--grade); padding-left: 8px; margin-left: -10px; }
+#secMix.on   { border-left: 2px solid var(--mix);   padding-left: 8px; margin-left: -10px; }
+#secRef.on   { border-left: 2px solid var(--muted); padding-left: 8px; margin-left: -10px; }
+
+.sublabel { color: var(--muted); margin: 8px 0 3px; display: block; }
+.muted { color: var(--muted); }
+.tiny { font-size: 10px; margin-bottom: 4px; }
+
+select {
+  background: #1e1e1e; border: 1px solid var(--line); color: var(--text);
+  padding: 5px 6px; border-radius: 3px; width: 100%;
+  font-family: inherit; font-size: inherit;
+}
+
+.row { display: flex; margin-top: 6px; }
+.row > * { flex: 1; min-width: 0; }
+.row > * + * { margin-left: 6px; }
+
+/* The two queue buttons stack instead of sitting side by side. Their labels
+   ("Add Analysis to Queue") are far too long to share a 300px docked panel -
+   sp-button sizes itself to its label and overflows the frame rather than
+   shrinking or wrapping. Full width each is the only layout that holds at the
+   panel's minimum width. */
+.actions { display: flex; flex-direction: column; margin-top: 6px; }
+.actions > sp-button { width: 100%; }
+.actions > sp-button + sp-button { margin-top: 6px; }
+
+/* Title and project on one line, deliberately laid out rather than left to
+   default display. UXP does not give <h1> block display, so the title and the
+   project name ran together with no gap; Chromium stacked them. An explicit
+   flex row behaves the same in both. */
+.headrow { display: flex; align-items: baseline; }
+.headrow h1 { flex: 0 0 auto; margin: 0 10px 0 0; }
+.headrow .projrow { flex: 1; min-width: 0; }
+
+.projrow { display: flex; align-items: center; }
+.projrow #projectLine { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.note {
+  font-size: 11px; color: var(--muted); margin: 2px 0 6px 2px;
+  border-left: 2px solid #3a3a3a; padding-left: 6px;
+}
+
+/* Sub-options under a section toggle. Hidden until the parent is on; the
+   burn-in case is greyed rather than hidden, per the spec. */
+.subfield { margin: 4px 0 4px 14px; }
+.subfield[hidden] { display: none; }
+.disabled { opacity: .4; pointer-events: none; }
+
+.preview {
+  font-size: 10px; color: var(--text); background: #1e1e1e;
+  border: 1px solid var(--line); border-radius: 3px;
+  padding: 4px 6px; margin-top: 4px; word-break: break-all;
+}
+.preview .willbe { color: var(--muted); }
+.preview .name { color: var(--text); }
+.preview.collide .name { color: var(--warn); }
+
+footer { padding: 10px 12px; border-top: 1px solid var(--line); background: var(--panel); }
+.status { min-height: 15px; margin-bottom: 6px; }
+.status.bad { color: var(--bad); }
+.status.warn { color: var(--warn); }
+.status.good { color: var(--good); }
+
+#report { padding-bottom: 4px; }
+.card {
+  background: #1e1e1e; border: 1px solid var(--line); border-radius: 3px;
+  padding: 8px; margin-bottom: 8px;
+}
+.card h3 { font-size: 11px; margin: 0 0 6px; font-weight: 600; }
+.card.grade h3 { color: var(--grade); }
+.card.mix h3 { color: var(--mix); }
+.kv { display: flex; justify-content: space-between; padding: 1px 0; }
+.kv span:last-child { color: var(--muted); }
+ul.list { margin: 4px 0 0; padding-left: 16px; }
+ul.list li { margin: 2px 0; word-break: break-all; }
+.bad { color: var(--bad); }
+.warn { color: var(--warn); }
+.good { color: var(--good); }
+
+/* Shared report formatting — the family's house style for any list of clips.
+   First written for The Conformer's check and run reports, now used by The
+   Onliner and The Consolidator too, so the three panels read the same way.
+   These were a flat list of grey lines and were hard to read: everything
+   looked equally important, and the REASONS - the part an editor acts on -
+   were the dimmest text on the panel. Now each group is a titled block, and
+   within a row the timecode, the clip and the reason are three distinct
+   things. */
+.report { margin-top: 6px; }
+.report > div { word-break: break-word; }
+
+.rsec { margin: 10px 0 0; border-left: 2px solid var(--line); padding-left: 8px; }
+.rsec.ok     { border-left-color: var(--good); }
+.rsec.warn   { border-left-color: var(--warn); }
+.rsec.bad    { border-left-color: var(--bad); }
+.rsec.info   { border-left-color: var(--accent); }
+.rsec.choose { border-left-color: var(--grade); }
+
+.rsec-head { display: flex; align-items: baseline; margin-bottom: 4px; }
+.rsec-title {
+  flex: 1; min-width: 0; font-size: 10px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--text);
+}
+.rsec.ok     > .rsec-head > .rsec-title { color: var(--good); }
+.rsec.warn   > .rsec-head > .rsec-title { color: var(--warn); }
+.rsec.bad    > .rsec-head > .rsec-title { color: var(--bad); }
+.rsec.choose > .rsec-head > .rsec-title { color: var(--grade); }
+.rsec-count {
+  margin-left: 6px; font-size: 10px; font-weight: 700; color: var(--bg);
+  background: var(--muted); border-radius: 7px; padding: 0 6px;
+}
+.rsec.ok     > .rsec-head > .rsec-count { background: var(--good); }
+.rsec.warn   > .rsec-head > .rsec-count { background: var(--warn); }
+.rsec.bad    > .rsec-head > .rsec-count { background: var(--bad); }
+.rsec.choose > .rsec-head > .rsec-count { background: var(--grade); }
+.rsec-lead { color: var(--muted); margin-bottom: 5px; }
+
+/* One clip: where it is, what it is, and why - three separate things. */
+.rrow { padding: 4px 0; border-top: 1px solid #333; }
+.rrow:first-child { border-top: 0; }
+.rrow-top { display: flex; align-items: baseline; }
+.tc {
+  font-family: "SF Mono", Menlo, monospace; font-size: 10px;
+  color: var(--muted); min-width: 52px; flex: 0 0 auto;
+}
+.trk {
+  font-size: 9px; font-weight: 700; color: var(--bg); background: var(--faint);
+  border-radius: 2px; padding: 0 4px; margin-right: 6px; flex: 0 0 auto;
+}
+.nm { flex: 1; min-width: 0; color: var(--text); word-break: break-all; }
+.chg { margin: 2px 0 0 52px; font-weight: 700; color: var(--good); }
+/* The reason lines up under the clip name, not under the timecode. */
+.why { margin: 1px 0 0 52px; color: var(--muted); }
+.rrow.bad  .why { color: var(--bad); }
+.rrow.warn .why { color: var(--warn); }
+/* Rows in panels whose reports are not timeline-based have no timecode column,
+   so the reason lines up under the name rather than under an empty gutter. */
+.rrow.notc .chg, .rrow.notc .why { margin-left: 0; }
+
+
+/* The one-line summary above the report. */
+.chips { display: flex; margin-top: 2px; }
+.chip {
+  margin-right: 6px; padding: 1px 7px; border-radius: 3px;
+  background: #1e1e1e; border: 1px solid var(--line); color: var(--text);
+}
+.chip.ok   { color: var(--good); border-color: #2f4a31; }
+.chip.bad  { color: var(--bad);  border-color: #4a2f2c; }
+.chip.info { color: var(--muted); }
+
+/* The Conformer's track picker: one row per video track, usually one ticked. */
+.tracklist { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; }
+.tracklist sp-checkbox { margin: 0; }
+.tracklist .empty { color: var(--muted); }
+
+/* The Conformer's version picker: shown for every cut with more than one
+   graded export, re-grades included. The thumbnails are the point - two
+   exports of one shot differ by a character in the filename and by the whole
+   picture on screen. */
+.versionrow {
+  border: 1px solid var(--line); border-radius: 3px;
+  padding: 5px 6px; margin: 5px 0; background: #1b1b1b;
+}
+.versionhead { color: var(--text); margin-bottom: 4px; }
+.versionrow select { margin-top: 5px; }
+.versionrow .note { margin: 3px 0 0; }
+.thumbstrip { display: flex; }
+.thumbstrip > * { flex: 1; min-width: 0; }
+.thumbstrip > * + * { margin-left: 5px; }
+.thumbcell { border: 1px solid transparent; border-radius: 2px; padding: 3px; }
+.thumbcell.picked { border-color: var(--grade); }
+/* Deliberately small. The picture only has to answer "which shot is this" -
+   a two-car head-on against a fist bump - and six of these at full width
+   pushed the rest of the report off the bottom of the panel. */
+.thumbcell img {
+  width: 100%; height: 54px; object-fit: cover;
+  display: block; border-radius: 2px;
+}
+.thumbcell .thumbmissing {
+  width: 100%; height: 54px; background: #111; border-radius: 2px;
+}
+.thumbcell .thumbname {
+  font-size: 10px; color: var(--text); margin-top: 3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.thumbcell .muted, .thumbcell .warn { font-size: 10px; }
+.versionrow .rsec-head { margin-bottom: 2px; }

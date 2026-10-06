@@ -1,0 +1,7 @@
+# ffmpeg/ffprobe are GPLv3 and fetched per machine - never commit them.
+# scripts/fetch-ffmpeg.sh (Mac) or a static build dropped in by hand (Windows).
+bin/
+
+__pycache__/
+*.pyc
+.DS_Store
