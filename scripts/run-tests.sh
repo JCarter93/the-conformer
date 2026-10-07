@@ -12,4 +12,9 @@ for t in tests/*-test.js; do
   echo "== $t"
   "$JSC" "$t" || fail=1
 done
+# The helper is Python; its queue handling is tested by running the real loop.
+for t in tests/*_test.py; do
+  echo "== $t"
+  /usr/bin/env python3 "$t" || fail=1
+done
 exit $fail

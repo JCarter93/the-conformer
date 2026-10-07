@@ -540,6 +540,31 @@ tests/                  run with scripts/run-tests.sh (jsc - there is no Node he
 tests/portability-test.js  static guard: no Mac path in panel code or the helper
 ```
 
+## Premiere 2025
+
+Tested on Premiere 25.6.6 (macOS, 2026-10-07) with a fake DaVinci grade made
+from the job's own rushes: the panel loads, and the placement primitive, Motion
+carry, graded-audio strip, stem placement and muting all behave as on 26.x.
+Two things were different, and both are handled:
+
+- **Reference frames get a doubled extension.** Asked to write `ref_x.png`,
+  Premiere 25.6.6 writes `ref_x.png.png`. The panel accepts either spelling
+  and renames to the expected one, so verification has its frames.
+- **2025 and 2026 keep separate data folders** (`PluginsStorage/PPRO/25/...`
+  and `.../26/...`), and the helper serves every one it finds, re-checking
+  every few seconds. It used to lock onto one, so whichever Premiere had not
+  been opened most recently reported "helper not running".
+
+Found during the same test and NOT specific to 2025 - both arise when the
+rushes or graded files run at a multiple of the sequence rate (50p media in a
+25p edit):
+
+- placements snap the graded file's in-point to the sequence's frame grid, so
+  an odd number of 50p frames lands one source frame late;
+- reference frames are rendered half a frame into each timeline frame, which on
+  50p media is the next source frame - enough to call clean cuts "retimed" or
+  "disputed" by one frame on short shots.
+
 ## Install
 
 ```bash

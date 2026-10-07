@@ -886,6 +886,22 @@ async function clearMarks(projectItem) {
  * check at all - it makes every render look failed. Listing the folder ENTRY
  * the user picked stays inside the scope the picker granted.
  */
+/**
+ * The name a reference frame actually landed under, or null.
+ *
+ * Premiere 26 writes exactly the filename it is given (and needs the
+ * extension in it, or fails "File Format is not supported"). Premiere 25.6.6
+ * appends the format's extension AGAIN: asked for `ref_x.png` it writes
+ * `ref_x.png.png`. Looking only for the requested name, the 2025 panel waited
+ * out its settle timeout, shipped a kit with no reference frames at all, and
+ * every cut came back inconclusive. Accept both spellings.
+ */
+function landedAs(seen, file) {
+  if (seen[file]) return file;
+  const doubled = file + file.slice(file.lastIndexOf("."));
+  return seen[doubled] ? doubled : null;
+}
+
 async function folderContents(folder) {
   const names = {};
   try {
@@ -1028,7 +1044,7 @@ async function exportReferenceFrames(sequenceRef, jobs, folder, size, isolateTra
   const settle = async (rows, timeoutMs) => {
     const deadline = Date.now() + timeoutMs;
     let seen = await folderContents(folder);
-    while (rows.some((row) => !seen[row.file]) && Date.now() < deadline) {
+    while (rows.some((row) => !landedAs(seen, row.file)) && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 400));
       seen = await folderContents(folder);
     }
@@ -1046,18 +1062,32 @@ async function exportReferenceFrames(sequenceRef, jobs, folder, size, isolateTra
     // attempt was re-rendered against the whole programme - the very thing
     // isolation exists to prevent.
     present = await settle(wanted, 20000);
-    missing = wanted.filter((row) => !present[row.file]);
+    missing = wanted.filter((row) => !landedAs(present, row.file));
     for (const row of missing) await render(row);
     if (missing.length) present = await settle(missing, 10000);
   } finally {
     stillMuted = await restore();
   }
 
+  // Give a doubled-extension frame (Premiere 25) the name the kit expects; if
+  // the rename is refused, the kit records the name it really has instead.
+  for (const row of wanted) {
+    const name = landedAs(present, row.file);
+    if (!name || name === row.file) continue;
+    try {
+      const entry = await folder.getEntry(name);
+      await entry.moveTo(folder, { newName: row.file, overwrite: true });
+      present[row.file] = true;
+    } catch (e) {
+      row.file = name;
+    }
+  }
+
   const frames = wanted.map((row) => ({
     key: row.key, probe: row.probe, file: row.file,
-    ok: !!present[row.file],
+    ok: !!landedAs(present, row.file),
     retried: missing.indexOf(row) !== -1,
-    error: present[row.file] ? null : (row.error || "the frame never appeared on disk")
+    error: landedAs(present, row.file) ? null : (row.error || "the frame never appeared on disk")
   }));
   // A track left muted is the one failure here that damages the edit rather
   // than the verification, so it is returned rather than swallowed.
@@ -1084,6 +1114,7 @@ async function findClipAt(sequenceRef, trackIndex, startTicks, toleranceTicks) {
 var COLOUR = { GRADED: 0 /* VIOLET */ };
 
 module.exports = {
+  landedAs,
   isAvailable,
   readProjectSummary,
   listSequences,

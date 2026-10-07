@@ -460,6 +460,14 @@ def verify_clip(clip, a, fps, frame, tol, manifest):
         row.setdefault("notes", []).append(
             "%d probe(s) rendered the same frame as another and were counted once" % duplicates)
     refs = unique
+    if not refs:
+        # Without this the loop below never runs and the verdict blamed the
+        # GRADED file ("could not decode the graded file: ") for frames that
+        # were never rendered - which sent the first Premiere 2025 run looking
+        # at the wrong half of the pipeline.
+        row["verdict"] = "inconclusive"
+        row["note"] = "no reference frames were rendered for this cut - nothing to compare against"
+        return row
 
     # Decode a WINDOW PER PROBE, not one span from the file's start.
     #

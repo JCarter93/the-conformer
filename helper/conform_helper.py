@@ -34,6 +34,7 @@ import argparse, concurrent.futures as cf, glob, hashlib, json, os, re, shutil, 
 
 HEARTBEAT_SECONDS = 5
 POLL_SECONDS = 0.5
+REDISCOVER_SECONDS = 5   # how often to look for another Premiere version's panel
 VERSION = "1.0.0"
 
 IS_WINDOWS = os.name == "nt"
@@ -107,18 +108,19 @@ def uxp_storage_roots():
             os.path.join(base, "Adobe", "Premiere Pro", "*", "UXP", "PluginsStorage")]
 
 
-def find_queue_dir(explicit=None):
+def find_queue_dirs(explicit=None):
     """
-    Where the panel's data folder is.
+    EVERY queue folder there is a panel for - one per Premiere version.
 
-    UXP hands the panel a data folder it can always write to, and puts it under
-    PluginsStorage keyed by host and plugin id. The exact path carries a
-    version segment that changes with Premiere, so this globs rather than
-    hard-coding it - and takes the most recently touched match, which is the
-    one the running Premiere is using.
+    Premiere 2025 and 2026 install side by side and keep separate data folders
+    (PluginsStorage/PPRO/25/... and .../26/...). The first version of this
+    picked ONE folder - the most recently touched - and kept it for the life of
+    the helper, so whichever Premiere had not been opened most recently got a
+    panel that said "helper not running" while the helper was running. Serving
+    them all costs a few stat calls a second and removes the guess.
     """
     if explicit:
-        return explicit
+        return [explicit]
     patterns = []
     for root in uxp_storage_roots():
         patterns += [
@@ -127,13 +129,18 @@ def find_queue_dir(explicit=None):
             os.path.join(root, "External", "theconformer", "PluginData"),
             os.path.join(root, "**", "theconformer", "**", "PluginData"),
         ]
-    hits = []
+    hits = set()
     for p in patterns:
-        hits.extend(glob.glob(p, recursive=True))
-    if not hits:
-        return None
-    hits.sort(key=lambda p: os.path.getmtime(p), reverse=True)
-    return os.path.join(hits[0], "queue")
+        hits.update(os.path.normpath(h) for h in glob.glob(p, recursive=True) if os.path.isdir(h))
+    # Newest first, so a log or a single-queue caller sees the live one first.
+    ordered = sorted(hits, key=lambda h: os.path.getmtime(h), reverse=True)
+    return [os.path.join(h, "queue") for h in ordered]
+
+
+def find_queue_dir(explicit=None):
+    """The newest queue folder alone - for callers that want just one."""
+    dirs = find_queue_dirs(explicit)
+    return dirs[0] if dirs else None
 
 
 class Heartbeat(object):
@@ -153,6 +160,7 @@ class Heartbeat(object):
     """
 
     def __init__(self, queue_getter, scripts, tools=None):
+        # Returns a LIST of queue folders - every Premiere version's panel.
         self.queue_getter = queue_getter
         self.scripts = scripts
         self.tools = tools or {}
@@ -172,21 +180,22 @@ class Heartbeat(object):
             self.since = None
 
     def write(self):
-        queue = self.queue_getter()
-        if not queue or not os.path.isdir(queue):
+        queues = [q for q in (self.queue_getter() or []) if q and os.path.isdir(q)]
+        if not queues:
             return
         with self.lock:
             busy, since = self.busy, self.since
         payload = {"pid": os.getpid(), "version": VERSION, "lastSeen": time.time(),
                    "scripts": self.scripts, "tools": self.tools, "busy": busy,
                    "busySeconds": round(time.time() - since, 1) if since else None}
-        try:
-            tmp = os.path.join(queue, "status.json.part")
-            with open(tmp, "w") as fh:
-                json.dump(payload, fh)
-            os.replace(tmp, os.path.join(queue, "status.json"))
-        except OSError:
-            pass
+        for queue in queues:
+            try:
+                tmp = os.path.join(queue, "status.json.part")
+                with open(tmp, "w") as fh:
+                    json.dump(payload, fh)
+                os.replace(tmp, os.path.join(queue, "status.json"))
+            except OSError:
+                pass
 
     def loop(self):
         while not self.stop.wait(HEARTBEAT_SECONDS):
@@ -520,30 +529,37 @@ def main():
         print("ffmpeg:  %s" % (a.ffmpeg or "NOT FOUND - " + FFMPEG_DOWNLOAD_URL), flush=True)
         print("ffprobe: %s" % (a.ffprobe or "NOT FOUND - " + FFMPEG_DOWNLOAD_URL), flush=True)
 
-    state = {"queue": None}
+    state = {"queues": [], "looked": 0.0}
 
-    def current_queue():
-        return state["queue"]
+    def current_queues():
+        return list(state["queues"])
 
-    beat = Heartbeat(current_queue, a.scripts, tool_report(a.ffmpeg, a.ffprobe))
+    beat = Heartbeat(current_queues, a.scripts, tool_report(a.ffmpeg, a.ffprobe))
     thread = threading.Thread(target=beat.loop, daemon=True)
     thread.start()
 
     while True:
-        # The queue folder may not exist until the panel has run once, so it is
-        # looked up on every pass rather than at startup - otherwise installing
-        # the helper before opening the panel would need a restart.
-        queue = state["queue"]
-        if queue is None or not os.path.isdir(queue):
-            queue = find_queue_dir(a.queue)
-            if queue:
-                os.makedirs(queue, exist_ok=True)
-                state["queue"] = queue
+        # A panel's data folder may not exist until it has run once, and a
+        # second Premiere version can appear at any time, so the folders are
+        # looked for again every few seconds rather than once at startup.
+        if time.time() - state["looked"] > REDISCOVER_SECONDS:
+            state["looked"] = time.time()
+            found = []
+            for queue in find_queue_dirs(a.queue):
+                try:
+                    os.makedirs(queue, exist_ok=True)
+                    found.append(queue)
+                except OSError:
+                    continue
+            added = [q for q in found if q not in state["queues"]]
+            state["queues"] = found
+            if added:
                 beat.write()
                 if a.verbose:
-                    print("watching %s" % queue, flush=True)
+                    for q in added:
+                        print("watching %s" % q, flush=True)
 
-        if queue:
+        for queue in current_queues():
             for req in sorted(glob.glob(os.path.join(queue, "req-*.json"))):
                 handle(req, queue, a.scripts, a.ffmpeg, a.ffprobe, a.verbose, beat)
 
