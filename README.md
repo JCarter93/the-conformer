@@ -555,6 +555,16 @@ Two things were different, and both are handled:
   every few seconds. It used to lock onto one, so whichever Premiere had not
   been opened most recently reported "helper not running".
 
+**Windows, Premiere 25.6.6** (Windows 11 ARM64 VM, same day, same rushes and
+grade): the helper served the 2025 panel ("Helper running") once fixed, and a
+full Check + conform placed every cut it accepted at exactly the timecode
+in-point (5 of 7, the other 2 refused for the 50p reasons below), with stems on
+new tracks and the offline's audio muted. Windows Premiere 25 writes reference
+frames under the name asked for - the doubled extension is a Mac 25.6.6 trait.
+On that GPU-less VM, reading 4K 50p H.264 over a network share, 4 of 21
+reference frames had not landed when the panel stopped waiting; the kit said
+so, and the cut left with one frame still resolved correctly.
+
 Found during the same test and NOT specific to 2025 - both arise when the
 rushes or graded files run at a multiple of the sequence rate (50p media in a
 25p edit):
