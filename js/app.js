@@ -572,7 +572,9 @@ async function planMultiClip() {
     // right for them - the API cannot set a clip's speed - and sending them
     // means frame matching spends minutes failing, then reports "frames likely
     // not in the graded file", which is a misleading reason for a speed change.
-    const conformable = clips.filter((c) => !plan.isRetimed(c));
+    // Adjustment layers carry no footage - the API hands back a number as
+    // their "media path", which planned as a refused "no graded file".
+    const conformable = clips.filter((c) => !plan.isRetimed(c) && !c.adjustmentLayer);
     const payload = conformable.filter((c) => !!c.path).map((c) => ({
       start: c.start, in: c.srcIn, dur: c.dur, source: plan.normalisePath(c.path),
       // Copied straight through by the planner and read back by plan.js, so a

@@ -963,12 +963,29 @@ async function exportReferenceFrames(sequenceRef, jobs, folder, size, isolateTra
    * a far worse bug than a failed verification.
    */
   const muted = [];
+  const hiddenBefore = [];
   const isolate = async () => {
     if (typeof isolateTrackIndex !== "number") return;
     const seq = await resolveSequence(sequenceRef);
     const videoCount = await seq.getVideoTrackCount();
     for (let t = 0; t < videoCount; t++) {
-      if (t === isolateTrackIndex) continue;
+      try { if (await (await seq.getVideoTrack(t)).isMuted()) hiddenBefore.push(t); } catch (e) { /* unknown */ }
+    }
+    for (let t = 0; t < videoCount; t++) {
+      if (t === isolateTrackIndex) {
+        // The track being verified may itself be switched off - an editor
+        // hiding a layer still wants it conformed. Rendered hidden, every
+        // frame came back blank (measured: V5 on a 9:16 job), so it is shown
+        // for the render and hidden again in restore().
+        try {
+          const own = await seq.getVideoTrack(t);
+          if (await own.isMuted()) {
+            await own.setMute(false);
+            muted.push({ kind: "video", index: t, wasHidden: true });
+          }
+        } catch (e) { /* the blank frames say so */ }
+        continue;
+      }
       const track = await seq.getVideoTrack(t);
       let was = false;
       try { was = await track.isMuted(); } catch (e) { was = false; }
@@ -996,13 +1013,16 @@ async function exportReferenceFrames(sequenceRef, jobs, folder, size, isolateTra
         const track = row.kind === "video"
           ? await seq.getVideoTrack(row.index)
           : await seq.getCaptionTrack(row.index);
-        if (track) await track.setMute(false);
+        if (track) await track.setMute(!!row.wasHidden);
       } catch (e) { /* reported by the caller as a restore failure */ }
     }
     const left = [];
     try {
       const videoCount = await seq.getVideoTrackCount();
       for (let t = 0; t < videoCount; t++) {
+        // Only what THIS render hid counts: a track the editor had switched
+        // off before is meant to be off, and reporting it read as a failure.
+        if (hiddenBefore.indexOf(t) !== -1) continue;
         const track = await seq.getVideoTrack(t);
         if (await track.isMuted()) left.push("V" + (t + 1));
       }

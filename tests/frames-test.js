@@ -78,5 +78,33 @@ eq(kitFiles["ref_t0c0_800.png.png"], undefined, "and nothing is left under the d
 eq(kitFiles["other.png"], "keep", "files this run does not render are left alone");
 eq(frames && frames.every(function (f) { return f.ok; }), true, "every frame reported landed");
 
+// --- a HIDDEN track is shown for its own render, and put back hidden --------
+//
+// Measured: V5 switched off by the editor, ticked for conform - every frame
+// rendered blank. And a track the editor had hidden was then reported as
+// "left muted" by the panel, which read as the panel's own failure.
+var tracks = [{ muted: false }, { muted: true }, { muted: true }];   // V1 shown; V2, V3 hidden by the editor
+var seenAtRender = null;
+function trackApi(t) {
+  return { isMuted: async function () { return t.muted; }, setMute: async function (m) { t.muted = !!m; } };
+}
+var seqWithTracks = {
+  getVideoTrackCount: async function () { return tracks.length; },
+  getVideoTrack: async function (i) { return trackApi(tracks[i]); },
+  getCaptionTrackCount: async function () { return 0; }
+};
+host.Project.getActiveProject = async function () { return { getSequence: async function () { return seqWithTracks; } }; };
+host.Exporter.exportSequenceFrame = async function (seq, t, file) {
+  seenAtRender = tracks.map(function (x) { return x.muted; }).join(",");
+  kitFiles[file] = "frame";
+};
+var hiddenRun = null;
+hosted.exports.exportReferenceFrames("seq", [{ key: "t1c0", start: 0, probes: [0.4], frameSeconds: 0.04 }],
+  kitFolder, { width: 360, height: 640 }, 1).then(function (f) { hiddenRun = f; }, function (e) { frameErr = e; });
+drainMicrotasks();
+eq(seenAtRender, "true,false,true", "rendering V2: V2 shown, V1 and V3 hidden");
+eq(tracks.map(function (x) { return x.muted; }).join(","), "false,true,true", "afterwards every track is as the editor left it");
+eq(hiddenRun && hiddenRun.stillMuted.length, 0, "and the editor's own hidden tracks are not reported as left muted");
+
 print((failed ? "FAILED " : "ok ") + passed + " passed, " + failed + " failed");
 if (failed) throw new Error(failed + " failed");
