@@ -40,12 +40,25 @@ def gray(ffmpeg, path, start=None, dur=None, fps=25.0, crop=None):
     """Downscaled luma. Greyscale structure survives grading; colour is exactly
     what changed, so matching on RGB would be matching on the difference.
 
-    `crop` is a fraction in (0,1] applied centred before scaling, to undo a
-    punch-in: the offline shows a crop of what the graded file holds, so
-    without this a reframed shot simply does not correlate with its own grade.
+    `crop` undoes a reframe before scaling (see crop_chain): the offline shows
+    a crop of what the graded file holds, so without it a reframed shot simply
+    does not correlate with its own grade.
     """
     out, err = gray_many(ffmpeg, path, [crop], start, dur, fps)
     return out[0], err
+
+
+def crop_chain(c):
+    """The crop half of a filter chain. `c` is a centred fraction (a punch-in)
+    or a window (x0, y0, x1, y1) in fractions of the frame (a reframe)."""
+    if isinstance(c, (tuple, list)):
+        x0, y0, x1, y1 = c
+        if x0 <= 0.001 and y0 <= 0.001 and x1 >= 0.999 and y1 >= 0.999:
+            return ""
+        return "crop=iw*%.6f:ih*%.6f:iw*%.6f:ih*%.6f," % (x1 - x0, y1 - y0, x0, y0)
+    if c and 0 < c < 0.999:
+        return "crop=iw*%.6f:ih*%.6f," % (c, c)
+    return ""
 
 
 def gray_many(ffmpeg, path, crops, start=None, dur=None, fps=25.0):
@@ -72,10 +85,7 @@ def gray_many(ffmpeg, path, crops, start=None, dur=None, fps=25.0):
         cmd += ["-t", str(dur)]
 
     def branch(c):
-        chain = ""
-        if c and 0 < c < 0.999:
-            chain += "crop=iw*%.6f:ih*%.6f," % (c, c)
-        return chain + "scale=%d:%d,format=gray" % (W, H)
+        return crop_chain(c) + "scale=%d:%d,format=gray" % (W, H)
 
     if len(crops) == 1:
         cmd += ["-vf", "fps=%s,%s" % (fps, branch(crops[0]))]
@@ -198,9 +208,8 @@ def crop_for_reframe(reframe, seq_w, seq_h, src_w, src_h):
     match to no match at all. So the caller tries both framings and keeps
     whichever actually matches the picture.
 
-    Returns (crop_fraction, note). Off-centre reframes are NOT compensated -
-    the crop would have to move with the position, and a wrong compensation
-    would be worse than none - so they are reported instead.
+    Returns (crop_fraction, note). Off-centre reframes are not a centred crop,
+    so they get no answer here - placed_window works those out.
     """
     if not reframe or not seq_w or not src_w:
         return None, None
@@ -215,10 +224,189 @@ def crop_for_reframe(reframe, seq_w, seq_h, src_w, src_h):
         return None, None                    # no punch-in, nothing to undo
     if isinstance(position, (list, tuple)) and len(position) >= 2:
         if abs(position[0] - 0.5) > 0.01 or abs(position[1] - 0.5) > 0.01:
-            return None, ("the shot is reframed off-centre (position %.2f, %.2f), which this "
-                          "check cannot undo - a low score here is expected"
-                          % (position[0], position[1]))
+            return None, None
     return fit / float(scale), ("compensated for a %.0f%% punch-in" % (scale / fit * 100 - 100))
+
+
+MAX_ROTATION = 2.0   # degrees
+
+
+def _motion(reframe, name):
+    p = (reframe or {}).get(name) or {}
+    return p.get("value"), bool(p.get("keyframed"))
+
+
+def placed_window(reframe, seq_w, seq_h, src_w, src_h, fitted=False):
+    """
+    Where the source sits in the offline frame, from its Motion settings.
+
+    A 16:9 shot reframed for 9:16 shows a tall slice of the source, and an
+    off-centre one shows a slice that is NOT in the middle. The centred crop
+    above cannot express either, so the full 16:9 graded frame was compared
+    against a 9:16 reference and scored ~0.3 - every reframed shot on a
+    vertical cut came back "inconclusive".
+
+    Motion places source pixel u at  Position + k * (u - Anchor)  in the
+    frame, with k = Scale/100 (times the fit, if "Scale to Frame Size" made
+    the fit happen outside Motion). Inverting that over the frame's edges
+    gives the slice of the source on screen; where the slice runs off the
+    source (a pillarboxed or pushed-off shot) both sides are cut back to the
+    part that has picture in it.
+
+    Returns ((graded_window, reference_window), note), windows as fractions
+    (x0, y0, x1, y1) - the graded file is assumed to be the full frame of the
+    source at any size, which is what a grade export is. (None, note) when
+    the framing cannot be worked out: animated, rotated, or not enough known.
+    """
+    if not (seq_w and seq_h and src_w and src_h):
+        return None, None
+    scale, scale_kf = _motion(reframe, "Scale")
+    pos, pos_kf = _motion(reframe, "Position")
+    anchor, anchor_kf = _motion(reframe, "Anchor Point")
+    rot, rot_kf = _motion(reframe, "Rotation")
+    if not isinstance(scale, (int, float)) or not isinstance(pos, (list, tuple)) or len(pos) < 2:
+        return None, None
+    if scale_kf or pos_kf or anchor_kf:
+        return None, "the framing is animated, so no single crop matches the whole cut"
+    # A levelling tilt is invisible at 64x36 - half a degree moves the far edge
+    # by a third of a pixel - so only a real rotation is refused.
+    if rot_kf or (isinstance(rot, (int, float)) and abs(rot) > MAX_ROTATION):
+        return None, "the shot is rotated, which this check does not undo - a low score here is expected"
+    if not isinstance(anchor, (list, tuple)) or len(anchor) < 2:
+        anchor = (0.5, 0.5)
+    if scale <= 0:
+        return None, None
+    k = scale / 100.0
+    if fitted:
+        k *= min(float(seq_w) / src_w, float(seq_h) / src_h)
+
+    def axis(p, a, seq, src):
+        # The source range on screen, clipped to the source, then mapped back.
+        px, ax = p * seq, a * src
+        g0, g1 = max(0.0, ax - px / k), min(float(src), ax + (seq - px) / k)
+        if g1 - g0 < 1e-6 * src:
+            return None
+        r0, r1 = px + k * (g0 - ax), px + k * (g1 - ax)
+        return (g0 / src, g1 / src), (r0 / seq, r1 / seq)
+
+    x, y = axis(pos[0], anchor[0], seq_w, src_w), axis(pos[1], anchor[1], seq_h, src_h)
+    if x is None or y is None:
+        return None, "the shot is pushed out of the frame entirely"
+    graded = (x[0][0], y[0][0], x[0][1], y[0][1])
+    ref = (x[1][0], y[1][0], x[1][1], y[1][1])
+    # A sliver is not a picture: under ~5% of the frame on either axis there
+    # is nothing to correlate.
+    if (ref[2] - ref[0]) < 0.05 or (ref[3] - ref[1]) < 0.05:
+        return None, "so little of the shot is on screen that there is nothing to compare"
+    note = None
+    if abs(pos[0] - 0.5) > 0.01 or abs(pos[1] - 0.5) > 0.01:
+        note = "compensated for an off-centre reframe (position %.2f, %.2f)" % (pos[0], pos[1])
+    elif abs(float(seq_w) / seq_h - float(src_w) / src_h) > 0.01:
+        note = "compared on the part of the shot the %dx%d frame shows" % (seq_w, seq_h)
+    return (graded, ref), note
+
+
+def _same_window(a, b):
+    return all(abs(p - q) < 0.005 for p, q in zip(a, b))
+
+
+FULL = (0.0, 0.0, 1.0, 1.0)
+
+
+def framings_for(reframe, seq_w, seq_h, src_w, src_h):
+    """
+    Every framing worth comparing at, as (name, graded crop, reference crop).
+
+    "full frame" and "punch-in" are what they always were. "as placed" is the
+    framing Motion actually describes, and is added only where it says
+    something the other two do not - an off-centre or different-aspect
+    reframe - so a plain 16:9 job runs exactly the comparisons it ran before.
+    "as placed, fitted" reads Scale 100 as "Scale to Frame Size", the one
+    ambiguity in Motion, and is tried beside it so the picture can settle it.
+    """
+    framings = [("full frame", None, None)]
+    crop, note = crop_for_reframe(reframe, seq_w, seq_h, src_w, src_h)
+    if crop is not None:
+        framings.append(("punch-in", crop, None))
+    centred = ((1 - crop) / 2, (1 - crop) / 2, (1 + crop) / 2, (1 + crop) / 2) if crop else None
+    scale, _ = _motion(reframe, "Scale")
+    readings = [False] + ([True] if isinstance(scale, (int, float)) and abs(scale - 100) < 0.01 else [])
+    for fitted in readings:
+        win, why = placed_window(reframe, seq_w, seq_h, src_w, src_h, fitted)
+        if win is None:
+            if why and not fitted:
+                note = why
+            continue
+        graded, ref = win
+        if _same_window(ref, FULL) and (_same_window(graded, FULL) or
+                                        (centred and _same_window(graded, centred))):
+            continue                       # nothing the existing framings do not already try
+        framings.append(("as placed, fitted" if fitted else "as placed", graded, ref))
+        if not fitted and why:
+            note = why
+    return framings, note
+
+
+def framings_for_clip(clip, manifest, ffprobe, graded_path):
+    """framings_for, with the sizes looked up. Motion's Scale is in the OFFLINE
+    source's pixels, so its size is used where the kit carries it; the graded
+    file's own size stands in for older kits."""
+    gw, gh = probe_size(ffprobe, graded_path)
+    return framings_for(clip.get("reframe"), manifest.get("sequenceWidth"),
+                        manifest.get("sequenceHeight"),
+                        clip.get("sourceWidth") or gw, clip.get("sourceHeight") or gh)
+
+
+def image_size(path):
+    """A PNG's pixel size from its header - no process launch per frame."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(24)
+        if head[:8] == b"\x89PNG\r\n\x1a\n":
+            return int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")
+    except OSError:
+        pass
+    return None, None
+
+
+def picture_box(img_w, img_h, seq_w, seq_h):
+    """
+    Where the sequence frame sits inside a rendered reference, as a window.
+
+    Premiere renders a frame at whatever size it is asked for and FITS the
+    sequence into it: a 9:16 sequence rendered at 640x360 comes back as a
+    202px strip between two bars. Measured on the first live 9:16 run, every
+    "as placed" window then landed mostly on bars and scored ~0.2. So each
+    reference window is mapped into the box that actually holds the picture.
+    """
+    if not (img_w and img_h and seq_w and seq_h):
+        return FULL
+    k = min(float(img_w) / seq_w, float(img_h) / seq_h)
+    bw, bh = seq_w * k / img_w, seq_h * k / img_h
+    if bw > 0.995 and bh > 0.995:
+        return FULL
+    return ((1 - bw) / 2, (1 - bh) / 2, (1 + bw) / 2, (1 + bh) / 2)
+
+
+def within(box, win):
+    """`win` (a window of the sequence frame) as a window of the image."""
+    if win is None:
+        win = FULL
+    x0, y0, x1, y1 = box
+    w, h = x1 - x0, y1 - y0
+    return (x0 + win[0] * w, y0 + win[1] * h, x0 + win[2] * w, y0 + win[3] * h)
+
+
+def load_ref(ffmpeg, path, framings, fps, seq_w=None, seq_h=None):
+    """A reference frame, uncropped (for the blank and duplicate checks) and at
+    every framing's crop, keyed by framing name - one decode for all of them.
+    Every crop is taken inside the part of the image that holds the picture."""
+    box = picture_box(*image_size(path), seq_w=seq_w, seq_h=seq_h)
+    crops = [None] + [None if (r is None and box == FULL) else within(box, r) for _, _, r in framings]
+    out, err = gray_many(ffmpeg, path, crops, fps=fps)
+    if not len(out[0]):
+        return out[0], err, {}
+    return out[0], err, dict((name, out[i + 1]) for i, (name, _, _) in enumerate(framings))
 
 
 def static_fraction(cand):
@@ -237,7 +425,7 @@ def static_fraction(cand):
     return float((sims > 0.98).mean())
 
 
-def resolve_candidates(clip, a, fps, frame):
+def resolve_candidates(clip, a, fps, frame, manifest):
     """
     Which candidate is this cut, and where does it sit in it?
 
@@ -261,7 +449,7 @@ def resolve_candidates(clip, a, fps, frame):
             row.setdefault("blankFrames", 0)
             row["blankFrames"] += 1
             continue
-        refs.append((float(ref["probe"]), img))
+        refs.append((float(ref["probe"]), img, path))
     if not refs:
         row["verdict"] = "inconclusive"
         row["note"] = ("every reference frame for this cut is blank - the track was hidden when "
@@ -272,9 +460,9 @@ def resolve_candidates(clip, a, fps, frame):
 
     # Identical frames are one vote, not two - see the main loop.
     unique = []
-    for probe_t, img in refs:
-        if not any(float(nm(img)[0] @ nm(kept)[0]) > 0.999 for _, kept in unique):
-            unique.append((probe_t, img))
+    for probe_t, img, path in refs:
+        if not any(float(nm(img)[0] @ nm(kept)[0]) > 0.999 for _, kept, _ in unique):
+            unique.append((probe_t, img, path))
     refs = unique
 
     cut = float(clip.get("dur") or 0)
@@ -291,22 +479,22 @@ def resolve_candidates(clip, a, fps, frame):
             results.append(entry)
             continue
         room = max(0.0, dur - cut)
-        span = room + (max(t for t, _ in refs) if refs else 0) + frame * 2
-        src_w, src_h = probe_size(a.ffprobe, path)
-        crop, _note = crop_for_reframe(clip.get("reframe"), None, None, src_w, src_h)
-
-        framings = [("full frame", None)]
-        if crop is not None:
-            framings.append(("punch-in", crop))
+        span = room + (max(t for t, _, _ in refs) if refs else 0) + frame * 2
+        # Each candidate gets its own framings: the window is a fraction of the
+        # source, but which reading of Scale applies can differ by file size.
+        framings, _note = framings_for_clip(clip, manifest, a.ffprobe, path)
+        ref_at = dict((t, load_ref(a.ffmpeg, rp, framings, fps, manifest.get("sequenceWidth"),
+                                   manifest.get("sequenceHeight"))[2]) for t, _, rp in refs)
         dfps = decode_fps(media_info(a.ffprobe, path)[3], fps)
-        decoded, _err = gray_many(a.ffmpeg, path, [f for _, f in framings], 0, span, dfps)
+        decoded, _err = gray_many(a.ffmpeg, path, [g for _, g, _ in framings], 0, span, dfps)
 
         best_overall = None
-        for (framing, _factor), cand in zip(framings, decoded):
+        for (framing, _g, _r), cand in zip(framings, decoded):
             if len(cand) < 2:
                 continue
             votes, top = [], -1.0
-            for probe_t, img in refs:
+            for probe_t, _img, _rp in refs:
+                img = ref_at[probe_t][framing]
                 sims = nm(cand) @ nm(img)[0]
                 b = int(np.argmax(sims))
                 score = float(sims[b])
@@ -430,21 +618,22 @@ def verify_clip(clip, a, fps, frame, tol, manifest):
     # to Frame Size" makes a fitted clip read 100 too - so BOTH framings
     # are tried and the one that actually matches the picture wins. The
     # offset is what matters here, not the framing.
-    src_w, src_h = probe_size(a.ffprobe, clip["graded"])
-    crop, crop_note = crop_for_reframe(clip.get("reframe"), manifest.get("sequenceWidth"),
-                                       manifest.get("sequenceHeight"), src_w, src_h)
+    framings, crop_note = framings_for_clip(clip, manifest, a.ffprobe, clip["graded"])
     if crop_note:
         row["reframeNote"] = crop_note
 
-    # Load every reference frame once; they are the same whichever framing
-    # the graded file is compared at.
+    # Load every reference frame once, at each framing's crop of it - an
+    # "as placed" comparison crops the reference too, to the part of the
+    # frame the shot covers.
     refs = []
+    ref_at = {}
     for ref in clip.get("refs", []):
         path = os.path.join(a.kit, ref["file"])
         if not os.path.exists(path):
             row["probes"].append({"probe": float(ref["probe"]), "error": "missing reference frame"})
             continue
-        refimg, referr = gray(a.ffmpeg, path, fps=fps)
+        refimg, referr, at = load_ref(a.ffmpeg, path, framings, fps,
+                                      manifest.get("sequenceWidth"), manifest.get("sequenceHeight"))
         if not len(refimg):
             row["probes"].append({"probe": float(ref["probe"]),
                                   "error": "could not decode the reference frame" +
@@ -456,6 +645,7 @@ def verify_clip(clip, a, fps, frame, tol, manifest):
                                            "probably hidden when it rendered"})
             continue
         refs.append((float(ref["probe"]), refimg))
+        ref_at[float(ref["probe"])] = at
 
     # DE-DUPLICATE the probes before they vote.
     #
@@ -504,17 +694,15 @@ def verify_clip(clip, a, fps, frame, tol, manifest):
     # ProRes over the network the decode is nearly all of the cost. ffmpeg
     # applies both chains to a single decode instead. The comparisons below are
     # unchanged; only the number of times the file is opened is.
-    framings = [("full frame", None)]
-    if crop is not None:
-        framings.append(("punch-in", crop))
     window = room + frame * 2
     per = {name: {"framing": name, "probes": [], "votes": [], "best": -1.0, "cand": None}
-           for name, _ in framings}
+           for name, _, _ in framings}
     dfps = decode_fps(media_info(a.ffprobe, clip["graded"])[3], fps)
-    for probe_t, refimg in refs:
-        decoded, _err = gray_many(a.ffmpeg, clip["graded"], [f for _, f in framings],
+    for probe_t, _full in refs:
+        decoded, _err = gray_many(a.ffmpeg, clip["graded"], [g for _, g, _ in framings],
                                   probe_t, window, dfps)
-        for (name, _factor), cand in zip(framings, decoded):
+        for (name, _g, _r), cand in zip(framings, decoded):
+            refimg = ref_at[probe_t][name]
             slot = per[name]
             if len(cand) < 1:
                 slot["probes"].append({"probe": probe_t,
@@ -533,7 +721,7 @@ def verify_clip(clip, a, fps, frame, tol, manifest):
             slot["best"] = max(slot["best"], score)
             if score >= a.min_score:
                 slot["votes"].append((probe_t, offset))
-    attempts = [per[name] for name, _ in framings]
+    attempts = [per[name] for name, _, _ in framings]
 
     usable = [x for x in attempts if x.get("cand") is not None]
     if not usable:
@@ -547,8 +735,9 @@ def verify_clip(clip, a, fps, frame, tol, manifest):
     row["framing"] = chosen["framing"]
     if len(usable) > 1:
         row["framingTried"] = {x["framing"]: round(x["best"], 4) for x in usable}
-    if chosen["framing"] == "punch-in":
-        row["crop"] = round(crop, 4)
+    crop = dict((n, g) for n, g, _ in framings)[chosen["framing"]]
+    if crop is not None:
+        row["crop"] = round(crop, 4) if isinstance(crop, float) else [round(c, 4) for c in crop]
     row["probes"].extend(chosen["probes"])
     votes = chosen["votes"]
     cand = chosen["cand"]
@@ -672,7 +861,7 @@ def main():
         # DaVinci prefix encodes the TRACK at grade time and points at the wrong
         # export once a timeline has been rearranged.
         if clip.get("candidates") and not clip.get("graded"):
-            return resolve_candidates(clip, a, fps, frame)
+            return resolve_candidates(clip, a, fps, frame, manifest)
         return verify_clip(clip, a, fps, frame, tol, manifest)
 
     # CHECK THE CLIPS CONCURRENTLY.

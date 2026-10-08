@@ -743,6 +743,39 @@ var realPunchIn = P.placedScaleFor({ offlineScale: 100, sourceWidth: 7680, sourc
   verifiedFraming: "punch-in" });
 eq(realPunchIn.apply, false, "a punch-in confirmed by the picture is left alone");
 
+// A 9x16 reframe is matched on the "as placed" framing. It reads Scale in
+// source pixels like a punch-in, so it must count as the picture's evidence
+// and must NOT refit; its Scale-to-Frame-Size twin must refit like full frame.
+var asPlaced = P.placedScaleFor({ offlineScale: 100, sourceWidth: 3840, sourceHeight: 2160,
+  gradedWidth: 3840, gradedHeight: 2160, frameWidth: 1080, frameHeight: 1920,
+  verifiedFraming: "as placed" });
+eq(asPlaced.fitted, false, "as placed: Scale was source pixels");
+eq(asPlaced.evidence, "picture", "and the picture said so");
+eq(asPlaced.apply, false, "so nothing is refitted");
+var asPlacedFit = P.placedScaleFor({ offlineScale: 100, sourceWidth: 3840, sourceHeight: 2160,
+  gradedWidth: 3840, gradedHeight: 2160, frameWidth: 1080, frameHeight: 1920,
+  verifiedFraming: "as placed, fitted" });
+eq(asPlacedFit.fitted, true, "as placed, fitted: it was Scale to Frame Size");
+eq(asPlacedFit.apply, true, "so the placed clip is refitted");
+eq(asPlacedFit.scale, 28.125, "to the 4K shot's fit in a 1080-wide frame");
+
+// References are rendered in the sequence's shape: at a fixed 640x360 a 9:16
+// cut came back as a strip between bars, and the bars were matched against.
+eq(JSON.stringify(P.referenceSize(1920, 1080)), '{"width":640,"height":360}', "16:9 renders at 640x360, as before");
+eq(JSON.stringify(P.referenceSize(1080, 1920)), '{"width":360,"height":640}', "9:16 renders at 360x640");
+eq(JSON.stringify(P.referenceSize(1080, 1080)), '{"width":640,"height":640}', "square renders square");
+eq(JSON.stringify(P.referenceSize(null, null)), '{"width":640,"height":360}', "an unknown shape keeps the old size");
+
+// The matcher needs the offline source's size to know where the shot sits:
+// Motion's Scale is in its pixels, not the graded file's.
+var sizedRun = P.buildRun([entry({ sourceWidth: 3840, sourceHeight: 2160, gradedWidth: 1920, gradedHeight: 1080 })],
+  [clip({ motion: { Scale: { value: 88.9, keyframed: false }, Position: { value: [0.21, 0.5], keyframed: false } } })],
+  { ticksPerFrame: TPF_25, frameWidth: 1080, frameHeight: 1920 });
+var sizedKit = P.verificationKit(sizedRun, { fps: 25, frameSeconds: 0.04, sequenceWidth: 1080, sequenceHeight: 1920 });
+eq(sizedKit.clips[0].sourceWidth, 3840, "the kit carries the offline source's width");
+eq(sizedKit.clips[0].sourceHeight, 2160, "and height, not the graded file's");
+eq(sizedKit.clips[0].reframe.Position.value[0], 0.21, "beside the Motion it describes");
+
 // A GRADED EXPORT OF A DIFFERENT SIZE needs no picture to settle it.
 //
 // Measured on the job it was built on: an HD comp sitting at Scale 100 - filling the

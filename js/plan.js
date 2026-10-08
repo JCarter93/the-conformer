@@ -351,13 +351,19 @@ function placedScaleFor(opts) {
   var gradedFit = fitScale(o.gradedWidth, o.gradedHeight, o.frameWidth, o.frameHeight);
   if (offlineFit === null || gradedFit === null) return null;
 
+  // "as placed" is the matcher's framing for an off-centre or other-aspect
+  // reframe: it reads Scale in source pixels, like a punch-in. "as placed,
+  // fitted" reads it as Scale to Frame Size, like a match at full frame.
+  var framing = o.verifiedFraming;
   var fitted;
-  if (o.verifiedFraming === "full frame" && offlineScale > offlineFit + 0.5) fitted = true;
-  else if (o.verifiedFraming === "punch-in") fitted = false;
+  if ((framing === "full frame" && offlineScale > offlineFit + 0.5) ||
+      framing === "as placed, fitted") fitted = true;
+  else if (framing === "punch-in" || framing === "as placed") fitted = false;
   else fitted = Math.abs(offlineScale - 100) < 0.01 && offlineFit < 99;
 
   var zoom = fitted ? offlineScale / 100 : offlineScale / offlineFit;
-  var fromPicture = (o.verifiedFraming === "full frame" || o.verifiedFraming === "punch-in");
+  var fromPicture = (framing === "full frame" || framing === "punch-in" ||
+                     framing === "as placed" || framing === "as placed, fitted");
   var scale = Math.round(gradedFit * zoom * 1000) / 1000;
   var changes = Math.abs(scale - offlineScale) > 0.01;
 
@@ -786,6 +792,21 @@ function mergeRefusals(run, rows) {
  *
  * A very short cut gets fewer probes; there is nowhere to put them.
  */
+/**
+ * The size to render reference frames at: 640 on the long edge, in the
+ * SEQUENCE's shape. Premiere fits the sequence into whatever size it is asked
+ * for, so a 9:16 cut rendered at a fixed 640x360 came back as a 202px strip
+ * between bars - most of each reference was bars, and the matcher compared
+ * against them. Even numbers, which every encoder path is happy with.
+ */
+function referenceSize(frameWidth, frameHeight) {
+  var w = Number(frameWidth), h = Number(frameHeight);
+  if (!(w > 0) || !(h > 0)) return { width: 640, height: 360 };
+  function even(n) { return Math.max(2, Math.round(n / 2) * 2); }
+  return w >= h ? { width: 640, height: even(640 * h / w) }
+                : { width: even(640 * w / h), height: 640 };
+}
+
 function verificationKit(run, opts) {
   var o = opts || {};
   var frameSeconds = o.frameSeconds || 0.04;
@@ -846,6 +867,10 @@ function verificationKit(run, opts) {
         : (typeof p.room === "number" ? p.room : null),
       method: p.method,
       reframe: p.reframe || null,
+      // Motion's Scale is in the offline SOURCE's pixels, so the matcher needs
+      // its size to work out which part of the shot the frame shows.
+      sourceWidth: (p.dims && p.dims.sourceWidth) || p.sourceWidth || null,
+      sourceHeight: (p.dims && p.dims.sourceHeight) || p.sourceHeight || null,
       probes: probes
     });
   }
@@ -1426,6 +1451,7 @@ function sharedFiles(placements) {
 
 module.exports = {
   betweenFramesWarning: betweenFramesWarning,
+  referenceSize: referenceSize,
   pickedVersion: pickedVersion,
   withVersion: withVersion,
   versionRow: versionRow,

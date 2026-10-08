@@ -681,7 +681,8 @@ async function verifyRun(run, fps, ticksPerFrame) {
       key: c.key, start: c.start, probes: c.probes, frameSeconds: frameSeconds
     }));
     const frames = await ppro.exportReferenceFrames(
-      state.sourceId, jobs, folder, { width: 640, height: 360 }, t);
+      state.sourceId, jobs, folder,
+      plan.referenceSize(state.shape && state.shape.frameWidth, state.shape && state.shape.frameHeight), t);
     frames.forEach((f) => written.push(f));
     if (frames.stillMuted && frames.stillMuted.length) {
       muteWarnings.push("V" + (t + 1) + " pass left " + frames.stillMuted.join(", ") + " muted");

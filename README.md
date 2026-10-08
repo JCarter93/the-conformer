@@ -357,7 +357,28 @@ Three details that cost a debugging round each:
   Frame Size" makes a fitted clip read 100 as well, and cropping one of those to
   the implied 25% turned a 0.93 match into nothing. So the matcher tries full
   frame and the implied punch-in, and keeps whichever matches.
-- **It runs the clips concurrently**, and both framings come off a **single
+- **Off-centre and vertical reframes are matched where the shot sits.** A
+  16:9 shot in a 9:16 cut shows a tall slice of the source, often not the
+  middle one, and neither framing above can express that — the full 16:9
+  graded frame against a 9:16 reference scored 0.06–0.6, so every reframed
+  shot on a vertical cut came back "inconclusive". The matcher now inverts
+  Motion (Position, Scale, Anchor Point) to find the slice of the source on
+  screen, crops the graded file to it and the reference to the part of the
+  frame it covers, and compares those ("as placed" in the report). On a real
+  9:16 job (references rendered offline) that took 2 confirmed of 11 to 10 of 11, and offsets
+  shifted 5 frames on purpose were all disputed. It is only added where it
+  says something new, so a plain 16:9 job runs exactly the comparisons it
+  did before. Animated framing and real rotations (over 2°) are reported, not
+  guessed; a levelling tilt is invisible at this resolution and is let through.
+- **References are rendered in the sequence's shape.** Premiere fits the
+  sequence into the size it is asked for, so a 9:16 cut rendered at the old
+  fixed 640x360 came back as a 202px strip between bars — and the first live
+  9:16 run scored ~0.2 on every cut, with one false "retimed" from a weak
+  full-frame match. The panel now renders at 640 on the long edge in the
+  sequence's own shape (360x640 for 9:16), and the matcher still finds the
+  picture inside any letterboxed reference, so older kits compare correctly.
+  On that run's own Premiere frames: 9 of 9 confirmed at ~0.999.
+- **It runs the clips concurrently**, and every framing comes off a **single
   decode** — ffmpeg splits the stream and stacks the two results into one tall
   frame, because they always asked about the same window of the same file.
   Together those took a four-track, 11-clip job from 904s to 583s; see the
@@ -716,7 +737,11 @@ the test fails and names the two affected cuts.
 
 **Do not hand-edit the fixture to make a test pass.** Re-capture it.
 
-The Python side is checked against saved output rather than by unit tests: a
+`tests/*_test.py` build tiny real media with ffmpeg and run the real helper
+scripts: two cuts from one rush (`candidates_test.py`), off-centre 9:16
+reframes (`reframe_test.py`), the 50p decode rate and the queue discovery.
+
+The Python side is otherwise checked against saved output: a
 refactor of `verify_offsets.py` or `plan_conform.py` is proved by re-running it
 over a kit and a plan from a real job and diffing the result field by field.
 Both current versions reproduce the live run exactly.

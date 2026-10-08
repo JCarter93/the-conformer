@@ -202,7 +202,10 @@ async function readTrackClips(sequenceRef, trackIndex) {
           const param = comp.getParam(p);
           let name = "";
           try { name = param.displayName; } catch (e) { name = ""; }
-          if (name !== "Scale" && name !== "Position") continue;
+          // Anchor Point and Rotation too: an off-centre reframe is only
+          // undone if the matcher knows exactly where the source sits.
+          if (name !== "Scale" && name !== "Position" && name !== "Anchor Point" &&
+              name !== "Rotation") continue;
           let varying = false;
           try { varying = param.isTimeVarying(); } catch (e) { varying = false; }
           let value = null;
@@ -1055,6 +1058,20 @@ async function exportReferenceFrames(sequenceRef, jobs, folder, size, isolateTra
     }
     return seen;
   };
+
+  /**
+   * CLEAR this run's names first. The kit folder outlives a run, and a frame
+   * left by an earlier one counts as "landed" the moment the wait starts -
+   * measured on Premiere 25 (Mac), whose fresh frames arrive as .png.png: the
+   * stale ref_x.png satisfied the wait at once, the new render was never
+   * renamed over it, and a whole Check verified against the previous run's
+   * 640x360 frames. Re-checking a re-cut edit would verify the OLD cut.
+   */
+  for (const row of wanted) {
+    for (const name of [row.file, row.file + row.file.slice(row.file.lastIndexOf("."))]) {
+      try { await (await folder.getEntry(name)).delete(); } catch (e) { /* not there */ }
+    }
+  }
 
   await isolate();
   let stillMuted = [];
