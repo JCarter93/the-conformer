@@ -797,6 +797,11 @@ async function setTrackName(sequenceRef, isAudio, trackIndex, name) {
   const track = isAudio ? await sequence.getAudioTrack(trackIndex)
                         : await sequence.getVideoTrack(trackIndex);
   if (!track) return false;
+  // Premiere 25.6.6 has no createSetNameAction on Track ("is not a function",
+  // measured 2026-10-08) - the stems still land, they just keep their default
+  // names. Say "not named" rather than throw, so a cosmetic step can never
+  // turn a good placement into a failure.
+  if (typeof track.createSetNameAction !== "function") return false;
   project.lockedAccess(() => {
     const action = track.createSetNameAction(name, true);
     project.executeTransaction((c) => { c.addAction(action); }, "Name track");

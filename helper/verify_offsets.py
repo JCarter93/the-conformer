@@ -122,7 +122,7 @@ _INFO = {}
 
 
 def media_info(ffprobe, path):
-    """Duration and pixel size, in one launch, remembered.
+    """Duration, pixel size and frame rate, in one launch, remembered.
 
     These were two ffprobe launches each, repeated for every candidate and for
     every cut that shares a graded file. Over the network a launch costs far
@@ -132,25 +132,45 @@ def media_info(ffprobe, path):
     if hit is not None:
         return hit
     r = subprocess.run([ffprobe, "-v", "error", "-select_streams", "v:0",
-                        "-show_entries", "stream=width,height:format=duration",
+                        "-show_entries", "stream=width,height,r_frame_rate:format=duration",
                         "-of", "json", path], capture_output=True, text=True)
-    dur = w = h = None
+    dur = w = h = rate = None
     try:
         doc = json.loads(r.stdout)
         stream = (doc.get("streams") or [{}])[0]
         w = int(stream["width"]) if stream.get("width") else None
         h = int(stream["height"]) if stream.get("height") else None
+        num, _, den = str(stream.get("r_frame_rate") or "").partition("/")
+        rate = float(num) / float(den or 1) if num and float(den or 1) else None
         dur = float(doc.get("format", {}).get("duration"))
     except Exception:
         pass
-    _INFO[path] = (dur, w, h)
-    return dur, w, h
+    _INFO[path] = (dur, w, h, rate)
+    return _INFO[path]
 
 
 def probe_duration(ffprobe, path):
     """A file's duration in seconds, for working out an ambiguous candidate's
     valid offset range without the plan having told us."""
     return media_info(ffprobe, path)[0]
+
+
+def decode_fps(native, seq_fps):
+    """
+    The rate to decode a graded file at for matching.
+
+    The sequence rate, unless the file runs at a whole multiple of it - 50p
+    exports of a 25p edit, 59.94 of 29.97 - in which case its own rate.
+    Decoding a 50p file at 25 kept every other frame, so offsets could only be
+    measured in 0.04s steps and a cut sitting an odd number of 50p frames in
+    was read as 0.12 at one probe and 0.16 at the next: a "retime" that is
+    really rounding. Any other rate (24 in a 25 edit, say) keeps the sequence
+    rate, which is what the reference frames were rendered at.
+    """
+    if not native or not seq_fps or native < seq_fps * 1.5:
+        return seq_fps
+    ratio = native / seq_fps
+    return native if abs(ratio - round(ratio)) < 0.01 else seq_fps
 
 
 def probe_size(ffprobe, path):
@@ -278,7 +298,8 @@ def resolve_candidates(clip, a, fps, frame):
         framings = [("full frame", None)]
         if crop is not None:
             framings.append(("punch-in", crop))
-        decoded, _err = gray_many(a.ffmpeg, path, [f for _, f in framings], 0, span, fps)
+        dfps = decode_fps(media_info(a.ffprobe, path)[3], fps)
+        decoded, _err = gray_many(a.ffmpeg, path, [f for _, f in framings], 0, span, dfps)
 
         best_overall = None
         for (framing, _factor), cand in zip(framings, decoded):
@@ -291,7 +312,7 @@ def resolve_candidates(clip, a, fps, frame):
                 score = float(sims[b])
                 top = max(top, score)
                 if score >= a.min_score:
-                    votes.append((probe_t, b / fps - probe_t))
+                    votes.append((probe_t, b / dfps - probe_t))
             if best_overall is None or (len(votes), top) > (len(best_overall["votes"]), best_overall["top"]):
                 best_overall = {"framing": framing, "votes": votes, "top": top}
         if best_overall:
@@ -489,9 +510,10 @@ def verify_clip(clip, a, fps, frame, tol, manifest):
     window = room + frame * 2
     per = {name: {"framing": name, "probes": [], "votes": [], "best": -1.0, "cand": None}
            for name, _ in framings}
+    dfps = decode_fps(media_info(a.ffprobe, clip["graded"])[3], fps)
     for probe_t, refimg in refs:
         decoded, _err = gray_many(a.ffmpeg, clip["graded"], [f for _, f in framings],
-                                  probe_t, window, fps)
+                                  probe_t, window, dfps)
         for (name, _factor), cand in zip(framings, decoded):
             slot = per[name]
             if len(cand) < 1:
@@ -505,7 +527,7 @@ def verify_clip(clip, a, fps, frame, tol, manifest):
             sims = nm(cand) @ nm(refimg)[0]
             best = int(np.argmax(sims))
             score = float(sims[best])
-            offset = best / fps
+            offset = best / dfps
             slot["probes"].append({"probe": probe_t, "offset": round(offset, 4),
                                    "score": round(score, 4)})
             slot["best"] = max(slot["best"], score)

@@ -110,6 +110,28 @@ function alignToFrame(ticks, ticksPerFrame) {
 }
 
 /**
+ * A warning when the graded file's in-point falls BETWEEN the sequence's frames.
+ *
+ * Premiere snaps a clip's in-point to the sequence's frame grid - measured on
+ * 25.6.6: 50p media marked at 0.14s in a 25p sequence placed at 0.12, 0.02 at
+ * 0.00. So a graded file rendered above the edit's rate whose cut sits an odd
+ * number of its own frames in cannot be placed exactly, by any means. It is
+ * rare (DaVinci counts handles in timeline frames, so its exports land on the
+ * grid), which is exactly why it should be said rather than rounded silently.
+ */
+function betweenFramesWarning(sourceInSeconds, ticksPerFrame) {
+  var tpf = Number(ticksPerFrame);
+  if (!tpf || tpf <= 0 || typeof sourceInSeconds !== "number" || !isFinite(sourceInSeconds)) return null;
+  var raw = secondsToTicks(sourceInSeconds);
+  var off = alignToFrame(raw, tpf) - raw;
+  if (Math.abs(off) <= tpf * 0.05) return null;
+  var ms = Math.round(Math.abs(off) / TICKS_PER_SECOND * 1000);
+  return "the cut starts between this sequence's frames in the graded file, which Premiere cannot " +
+         "place - it plays " + ms + " ms " + (off > 0 ? "late" : "early") +
+         " (ask for handles in whole timeline frames)";
+}
+
+/**
  * Parse the plan file. Returns entries plus any structural complaint.
  *
  * Deliberately strict about the shape: a plan that is not an array, or whose
@@ -651,7 +673,8 @@ function buildRun(entries, clips, opts) {
       dims: { sourceWidth: e.sourceWidth, sourceHeight: e.sourceHeight,
               gradedWidth: e.gradedWidth, gradedHeight: e.gradedHeight },
       status: e.status,
-      warnings: e.warnings || []
+      warnings: (e.warnings || []).concat(
+        betweenFramesWarning(Number(e.sourceIn), ticksPerFrame) || [])
     });
   }
 
@@ -781,14 +804,26 @@ function verificationKit(run, opts) {
     // So: a few frames in, then spread. The matcher decodes a small window per
     // probe rather than one long span, so a late probe costs no more than an
     // early one.
+    //
+    // And ON THE FRAME GRID. A probe at 0.30s on a 25p cut is 7.5 frames in;
+    // the panel renders at probe + half a frame, which put that reference on
+    // frame 8 while the matcher compared it as frame 7.5. Probes at different
+    // fractions of a frame were then off by different amounts, which reads
+    // exactly like a speed change - measured on 50p rushes in a 25p edit,
+    // clean cuts came back "retimed" at 2.2% and "disputed" by one frame.
+    // Snapped, the reference IS the frame the matcher thinks it is.
+    var onGrid = function (t) {
+      return Math.round(Math.round(t / frameSeconds) * frameSeconds * 1e6) / 1e6;
+    };
     var earliest = 3 * frameSeconds;
-    var latest = p.dur - 2 * frameSeconds;
+    var latest = Math.floor((p.dur - 2 * frameSeconds) / frameSeconds + 1e-6) * frameSeconds;
     var probes = [];
     [0.15, 0.45, 0.75].forEach(function (fraction) {
-      var t = p.dur * fraction;
+      var t = onGrid(p.dur * fraction);
       if (t < earliest) t = earliest;
       if (t > latest) t = latest;
       if (t < 0) t = 0;
+      t = onGrid(t);
       if (probes.indexOf(t) === -1) probes.push(t);
     });
 
@@ -894,7 +929,7 @@ function applyVerification(run, doc, opts) {
       dims: { sourceWidth: cand.sourceWidth, sourceHeight: cand.sourceHeight,
               gradedWidth: chosenInfo.gradedWidth, gradedHeight: chosenInfo.gradedHeight },
       status: cand.status,
-      warnings: [],
+      warnings: [].concat(betweenFramesWarning(Number(verdict.measured), ticksPerFrame) || []),
       reframe: cand.reframe || null,
       verification: verdict
     });
@@ -1388,6 +1423,7 @@ function sharedFiles(placements) {
 }
 
 module.exports = {
+  betweenFramesWarning: betweenFramesWarning,
   pickedVersion: pickedVersion,
   withVersion: withVersion,
   versionRow: versionRow,

@@ -545,11 +545,16 @@ tests/portability-test.js  static guard: no Mac path in panel code or the helper
 Tested on Premiere 25.6.6 (macOS, 2026-10-07) with a fake DaVinci grade made
 from the job's own rushes: the panel loads, and the placement primitive, Motion
 carry, graded-audio strip, stem placement and muting all behave as on 26.x.
-Two things were different, and both are handled:
+Three things were different, and all are handled:
 
 - **Reference frames get a doubled extension.** Asked to write `ref_x.png`,
   Premiere 25.6.6 writes `ref_x.png.png`. The panel accepts either spelling
   and renames to the expected one, so verification has its frames.
+- **Tracks cannot be renamed.** Premiere 25.6.6's `Track` has no
+  `createSetNameAction` ("is not a function"), so stems and masters keep
+  "Audio N"/"Video N". The placement is unaffected; the report says which stem
+  is on which track instead of counting the naming as a failure (the first 2025
+  run reported three placed stems as "Failed").
 - **2025 and 2026 keep separate data folders** (`PluginsStorage/PPRO/25/...`
   and `.../26/...`), and the helper serves every one it finds, re-checking
   every few seconds. It used to lock onto one, so whichever Premiere had not
@@ -565,15 +570,33 @@ On that GPU-less VM, reading 4K 50p H.264 over a network share, 4 of 21
 reference frames had not landed when the panel stopped waiting; the kit said
 so, and the cut left with one frame still resolved correctly.
 
-Found during the same test and NOT specific to 2025 - both arise when the
-rushes or graded files run at a multiple of the sequence rate (50p media in a
-25p edit):
+**50p rushes in a 25p edit** (fixed 2026-10-08, any Premiere version). The
+first 2025 test called clean cuts "retimed" and "disputed by one frame". Two
+causes, both measured:
 
-- placements snap the graded file's in-point to the sequence's frame grid, so
-  an odd number of 50p frames lands one source frame late;
-- reference frames are rendered half a frame into each timeline frame, which on
-  50p media is the next source frame - enough to call clean cuts "retimed" or
-  "disputed" by one frame on short shots.
+- **Probes were not on the frame grid.** A probe at 0.30s on a 25p cut is 7.5
+  frames in; the panel renders at probe + half a frame, so the reference was
+  frame 8 while the matcher compared it as frame 7.5 - a rendered reference was
+  shown to match rush frame 50.32 at 0.999 against 0.951 for the 50.30 the
+  matcher assumed. Each probe was off by a different fraction, which reads as
+  drift. Probes are now snapped to the grid (`verificationKit`,
+  `tests/probes-test.js`).
+- **Graded files were decoded at the sequence rate.** A 50p export lost every
+  other frame, so offsets moved in 0.04s steps. The matcher now decodes at the
+  file's own rate when it is a whole multiple of the sequence's
+  (`decode_fps`, `tests/decode_rate_test.py`).
+
+Checked with real 50p FX6 rushes and two fake grades (25p and 50p): the old
+code gave 2-4 false "retimed" and a one-frame "disputed" per run - matching
+what Premiere produced live - and the fixed code confirmed every unambiguous
+cut at its planned offset on every probe, and resolved both ambiguous ones.
+
+One thing cannot be fixed: **Premiere snaps a clip's in-point to the
+sequence's grid** (measured: 50p media marked at 0.14s in a 25p sequence
+placed at 0.12). A graded file whose cut sits an odd number of its own frames
+in can only be placed to the nearest frame, so the placement now carries a
+warning saying how many milliseconds early or late it plays. DaVinci counts
+handles in timeline frames, so its exports do not hit this.
 
 ## Install
 

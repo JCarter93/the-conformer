@@ -997,9 +997,13 @@ async function placeWholeInto(targetId, run, report, isMaster, offlineAudioCount
           audioOnly: !isMaster
         });
         const label = p.label || (isMaster ? "GRADED MASTER" : p.name);
-        if (await ppro.setTrackName(targetId, !isMaster, trackIndex, label)) result.named++;
         result.placed.push({ name: p.name, label: label,
                              track: (isMaster ? "V" : "A") + (trackIndex + 1) });
+        // Naming is a courtesy, after the placement has already happened - a
+        // failure here must not report a stem that IS on the timeline as failed.
+        try {
+          if (await ppro.setTrackName(targetId, !isMaster, trackIndex, label)) result.named++;
+        } catch (e) { /* counted as unnamed below */ }
       } catch (e) {
         result.failed.push({ name: p.name, error: String(e.message || e) });
       }
@@ -1095,6 +1099,12 @@ function renderWholeRun(result, run) {
   if (result.failed.length) {
     const sec = section(report, "Failed", result.failed.length, "bad");
     result.failed.forEach((f) => row(sec, { name: f.name, why: f.error, kind: "bad" }));
+  }
+  if (result.placed.length && result.named < result.placed.length) {
+    line(report, "This Premiere cannot rename tracks from a plugin (Premiere 2025 has no API for it), so " +
+         (result.placed.length - result.named === 1 ? "one track keeps" : "the tracks keep") +
+         " the default name - the list above says which " + (isMaster ? "file" : "stem") +
+         " is on which track.", "note");
   }
   if (result.muted.length) {
     line(report, "Muted the offline's own audio on A1–A" + result.muted.length +
