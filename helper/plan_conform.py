@@ -345,6 +345,54 @@ def solve(c, graded_path, get_stderr, a, handle, tol):
                 % (tc_usable, r["method"], r["sourceIn"]))
     return r
 
+def settle_by_timecode(e, cands):
+    """
+    Let timecode decide between same-round exports where it can.
+
+    Two cuts from one rush mean two graded files that both match its name, so
+    the cut is AMBIGUOUS - but where the grade kept source timecode, each file
+    covers a different stretch of the rush, and only one of them can hold this
+    cut. When at least one candidate's timecode puts the cut inside it, every
+    candidate whose timecode puts it OUTSIDE is the wrong shot, not a fallback:
+    its "handles" offset would place another part of the rush. And when exactly
+    one candidate is left, timecode has answered the question the picture was
+    being asked, so the cut is settled here (and still verified like any other
+    timecode placement).
+
+    Nothing changes where no candidate's timecode lands in range - a grade that
+    burned a fresh session timecode - or where any candidate has no timecode:
+    the picture still decides those.
+    """
+    if not any(h.get("tcInRange") is True for h in cands):
+        return
+    for h in cands:
+        if h.get("tcInRange") is False:
+            h["excludedByTimecode"] = True
+            h["sourceIn"] = None
+            h["method"] = "timecode puts this cut outside the file"
+    live = [h for h in cands if h.get("tcInRange") is True]
+    # SUPERSEDED took the newest round by folder name; if timecode says that
+    # file holds a different stretch of the rush, take the newest one that
+    # does hold the cut instead.
+    picked = [h for h in cands if h.get("path") == e.get("graded")]
+    if picked and picked[0].get("excludedByTimecode") and live:
+        best = sorted(live, key=lambda h: (h.get("folder") or "", h.get("name") or ""))[-1]
+        e["graded"] = best["path"]
+        e["resolvedBy"] = "timecode"
+        e.setdefault("warnings", []).append(
+            "the newest round's file does not hold this cut by timecode - used %s" % best["name"])
+        for h in cands:
+            h["chosen"] = h is best
+        return
+    if (e.get("status") == "AMBIGUOUS" and len(live) == 1
+            and all(h.get("tcInRange") is not None for h in cands)):
+        e["status"] = "OK"
+        e["graded"] = live[0]["path"]
+        e["resolvedBy"] = "timecode"
+        for h in cands:
+            h["chosen"] = h is live[0]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--graded", required=True)
@@ -401,7 +449,12 @@ def main():
 
     for c in clips:
         stem = os.path.splitext(os.path.basename(c["source"]))[0]
-        hits = [g for g in graded_files if token_match(stem, g["name"])]
+        # COPIES, one set per cut. These dicts are written to below (each
+        # candidate's offset for THIS cut), and the same graded file is a
+        # candidate for every cut from its rush - sharing the objects meant the
+        # last cut solved overwrote every other cut's offsets, so two cuts from
+        # one rush showed one identical, half-wrong candidate list.
+        hits = [dict(g) for g in graded_files if token_match(stem, g["name"])]
         e = dict(c, stem=stem)
         if not hits:
             e["status"] = "MISSING"
@@ -458,10 +511,19 @@ def main():
                 alt = solve(c, h["path"], get_stderr, a, handle, tol)
                 h["retrimmed"] = bool(alt.pop("retrimmed", False))
                 alt.pop("warnings", None)
-                alt.pop("tcCheck", None)
+                # None = no usable timecode; True/False = it covers the cut or not.
+                h["tcInRange"] = (alt.pop("tcCheck", None) or {}).get("inRange")
                 for k in ("sourceIn", "method", "gradedDur", "gradedWidth", "gradedHeight"):
                     if k in alt:
                         h[k] = alt[k]
+            settle_by_timecode(e, cands)
+            if e.get("resolvedBy") == "timecode":
+                solved = solve(c, e["graded"], get_stderr, a, handle, tol)
+                if not solved.pop("retrimmed", False) and e.get("status") == "RETRIMMED":
+                    e["status"] = "SUPERSEDED"   # the first pick was the wrong file, not a retrim
+                for w in solved.pop("warnings", []):
+                    e.setdefault("warnings", []).append(w)
+                e.update(solved)
 
         counts[e["status"]] += 1
         plan.append(e)

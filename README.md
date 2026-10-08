@@ -483,6 +483,25 @@ Choosing a file answers *which*; it does not answer *where in it*. Where the
 plan could not work the offset out, the cut waits on verification with its
 candidate list narrowed to the one chosen — so press Check again after picking.
 
+### Two cuts from one rush
+
+A rush used twice gives two graded exports that both match its name. Each cut
+gets its **own** candidate list with its own offsets - the planner used to put
+the same file objects into both cuts and write each cut's offsets into them, so
+the last cut solved overwrote the other and both showed one list, right for
+one cut and wrong for the other.
+
+Where the grade kept source timecode, **timecode settles it** before the picture
+is asked: a candidate whose timecode puts the cut outside the file is the wrong
+stretch of the rush, so it is excluded ("timecode puts this cut outside the
+file", no offset), and if exactly one candidate is left the cut is placed by
+timecode ("the only one whose timecode holds this cut") and verified like any
+other. If any candidate has no usable timecode, or none lands in range (a grade
+that burned a fresh session timecode), the cut stays for the picture to decide,
+as before. The same rule stops a SUPERSEDED cut taking the newest round when
+that round's file holds a different part of the rush.
+`tests/candidates_test.py` builds real media with timecode and runs the planner.
+
 ## Motion
 
 A fresh placement carries no effects, which is exactly what strips the offline's

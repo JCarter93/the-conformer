@@ -567,6 +567,20 @@ eq(sup.versions[0].candidates.length, 2, "both rounds are listed");
 eq(sup.versions[0].candidates[1].chosen, true, "the default is flagged in the list");
 eq(sup.versions[0].candidates[0].folder, "260407", "with the folder that distinguishes them");
 
+// Two cuts from one rush: the planner settles the cut by timecode and marks
+// the file that does not hold it. The card has to SAY that - in the first
+// live run it read "offset not known yet", as if the picture might still pick it.
+var byTc = P.buildRun([twoRounds({
+  status: "OK", resolvedBy: "timecode",
+  candidates: [
+    { path: "/graded/V1-0001_A015.mov", sourceIn: 0.24, gradedDur: 3.48, method: "timecode", chosen: true },
+    { path: "/graded/V1-0003_A015.mov", sourceIn: null, gradedDur: 3.0,
+      method: "timecode puts this cut outside the file", excludedByTimecode: true }
+  ], graded: "/graded/V1-0001_A015.mov", sourceIn: 0.24 })], [clip()], { ticksPerFrame: TPF_25 });
+eq(byTc.versions[0].why, "the only one whose timecode holds this cut", "a timecode-settled cut says why");
+eq(byTc.versions[0].candidates[1].outside, true, "the file that cannot hold the cut is marked outside");
+eq(byTc.versions[0].candidates[0].outside, false, "and the one that can is not");
+
 // Contested cuts are listed in TIMECODE order, like everything else in the
 // report. Track order put 0:25 above 0:11, and a swap went onto the wrong cut.
 var manyVersions = P.buildRun(

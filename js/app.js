@@ -1301,12 +1301,13 @@ function renderVersions(run, el) {
       }
       line(cell, c.name, "thumbname");
       // Say what is known WITHOUT the picture, because that is often enough.
-      line(cell, (c.holds === false ? "too short for this cut"
+      line(cell, (c.outside ? "timecode puts this cut outside it"
+                  : c.holds === false ? "too short for this cut"
                   : (c.sourceIn === null ? "offset not known yet"
                      : "starts at " + c.sourceIn.toFixed(2) + "s")) +
                  (c.gradedDur !== null ? "  ·  " + c.gradedDur.toFixed(2) + "s" : "") +
                  (c.folder ? "  ·  " + c.folder : ""),
-           c.holds === false ? "warn" : "muted");
+           (c.outside || c.holds === false) ? "warn" : "muted");
       strip.appendChild(cell);
     });
     box.appendChild(strip);

@@ -508,8 +508,9 @@ function versionRow(entry, clip, candidates, picked, frameSeconds) {
     chosen: chosenPath,
     byUser: !!picked,
     why: picked ? "you chose this one"
+       : (entry.resolvedBy === "timecode" ? "the only one whose timecode holds this cut"
        : (String(entry.status) === "SUPERSEDED" ? "newest grade round"
-       : (chosenPath ? "the only one that matched" : "nothing chosen yet")),
+       : (chosenPath ? "the only one that matched" : "nothing chosen yet"))),
     candidates: (candidates || []).map(function (c) {
       var path = normalisePath(c.path || c);
       var dur = (typeof c.gradedDur === "number") ? c.gradedDur : null;
@@ -520,6 +521,7 @@ function versionRow(entry, clip, candidates, picked, frameSeconds) {
         gradedDur: dur,
         sourceIn: (typeof c.sourceIn === "number") ? c.sourceIn : null,
         method: c.method || null,
+        outside: c.excludedByTimecode === true,
         holds: (dur === null) ? null : (dur + slack >= cut),
         chosen: path === chosenPath
       };
