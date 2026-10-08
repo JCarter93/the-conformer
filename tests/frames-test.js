@@ -106,5 +106,41 @@ eq(seenAtRender, "true,false,true", "rendering V2: V2 shown, V1 and V3 hidden");
 eq(tracks.map(function (x) { return x.muted; }).join(","), "false,true,true", "afterwards every track is as the editor left it");
 eq(hiddenRun && hiddenRun.stillMuted.length, 0, "and the editor's own hidden tracks are not reported as left muted");
 
-print((failed ? "FAILED " : "ok ") + passed + " passed, " + failed + " failed");
-if (failed) throw new Error(failed + " failed");
+// --- frames that never land are retried one at a time, while it helps -----
+//
+// Measured on Windows 25.6.6 in a GPU-less VM: exportSequenceFrame reported
+// success for frames that never reached disk - 9 of 21 landed, one
+// back-to-back retry got 7 more, and 5 never came. Here each frame needs a
+// different number of attempts; the waits are shortened so this runs in
+// well under a second. jsc only fires timers after the script body, so the
+// verdict is reported from the completion callback.
+var attempts = {}, needs = { "ref_t0c0_400.png": 1, "ref_t0c0_800.png": 2, "ref_t0c0_1200.png": 3, "ref_t0c0_1600.png": 99 };
+var dropFiles = {};
+var dropFolder = fakeFolder(dropFiles);
+host.Project.getActiveProject = async function () { return { getSequence: async function () { return seqWithTracks; } }; };
+host.Exporter.exportSequenceFrame = async function (seq, t, file) {
+  attempts[file] = (attempts[file] || 0) + 1;
+  if (attempts[file] >= needs[file]) dropFiles[file] = "frame";   // reported success either way
+};
+var lone = {}, loneFiles = {};
+function finish() {
+  print((failed ? "FAILED " : "ok ") + passed + " passed, " + failed + " failed");
+  if (failed) setTimeout(function () { throw new Error(failed + " failed"); }, 0);
+}
+hosted.exports.exportReferenceFrames("seq", [{ key: "t0c0", start: 0, probes: [0.4, 0.8, 1.2, 1.6], frameSeconds: 0.04 }],
+  dropFolder, { width: 360, height: 640 }, undefined, { firstMs: 30, eachMs: 30, rounds: 3 }).then(function (f) {
+  var by = {}; f.forEach(function (x) { by[x.file] = x; });
+  eq(by["ref_t0c0_400.png"].ok && !by["ref_t0c0_400.png"].retried, true, "a frame that lands first time is not retried");
+  eq(by["ref_t0c0_800.png"].ok, true, "one that needs a second attempt lands on the first retry round");
+  eq(by["ref_t0c0_1200.png"].ok, true, "one that needs a third lands on a LATER round - the old single retry lost it");
+  eq(by["ref_t0c0_1600.png"].ok, false, "one that never lands is reported missing");
+  eq(by["ref_t0c0_1600.png"].error, "the frame never appeared on disk", "and says so");
+  eq(attempts["ref_t0c0_1600.png"], 4, "retried until a round landed nothing (1 + 3 rounds), then given up");
+  // A frame that never lands, alone: one fruitless round and it stops.
+  host.Exporter.exportSequenceFrame = async function (seq, t, file) { lone[file] = (lone[file] || 0) + 1; };
+  return hosted.exports.exportReferenceFrames("seq", [{ key: "t9c0", start: 0, probes: [0.4], frameSeconds: 0.04 }],
+    fakeFolder(loneFiles), { width: 360, height: 640 }, undefined, { firstMs: 30, eachMs: 30, rounds: 3 });
+}).then(function () {
+  eq(lone["ref_t9c0_400.png"], 2, "a round that lands nothing ends the retrying (1 + 1 attempts)");
+  finish();
+}, function (e) { eq(String(e), "", "the retry run completed"); finish(); });

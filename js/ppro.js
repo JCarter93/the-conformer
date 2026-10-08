@@ -941,7 +941,7 @@ async function folderContents(folder) {
  * The filename must carry an extension or Premiere fails with "Internal error :
  * File Format is not supported".
  */
-async function exportReferenceFrames(sequenceRef, jobs, folder, size, isolateTrackIndex) {
+async function exportReferenceFrames(sequenceRef, jobs, folder, size, isolateTrackIndex, timing) {
   const P = ppro();
   const w = (size && size.width) || 640;
   const h = (size && size.height) || 360;
@@ -1093,6 +1093,8 @@ async function exportReferenceFrames(sequenceRef, jobs, folder, size, isolateTra
     }
   }
 
+  const t = Object.assign({ firstMs: 20000, eachMs: 8000, rounds: 3 }, timing || {});
+  const retried = new Set();
   await isolate();
   let stillMuted = [];
   let present = {};
@@ -1103,10 +1105,32 @@ async function exportReferenceFrames(sequenceRef, jobs, folder, size, isolateTra
     // after the tracks were restored, so any frame that needed a second
     // attempt was re-rendered against the whole programme - the very thing
     // isolation exists to prevent.
-    present = await settle(wanted, 20000);
+    present = await settle(wanted, t.firstMs);
     missing = wanted.filter((row) => !landedAs(present, row.file));
-    for (const row of missing) await render(row);
-    if (missing.length) present = await settle(missing, 10000);
+
+    /**
+     * RETRY ONE AT A TIME, for as long as it is working.
+     *
+     * Measured on Windows 25.6.6 in a GPU-less VM: exportSequenceFrame
+     * reported success for frames that never reached disk - 9 of 21 landed,
+     * a back-to-back re-render of the rest landed 7 more, and 5 never came,
+     * so cuts were judged on one probe instead of three. A retry now renders
+     * each missing frame and waits for THAT frame before the next, and
+     * another round runs while the last one landed anything. A round that
+     * lands nothing ends it: the frame is reported missing, not waited on.
+     */
+    for (let round = 0; round < t.rounds && missing.length; round++) {
+      for (const row of missing) {
+        retried.add(row);
+        await render(row);
+        present = await settle([row], t.eachMs);
+      }
+      const still = missing.filter((row) => !landedAs(present, row.file));
+      if (still.length === missing.length) break;
+      missing = still;
+    }
+    present = await folderContents(folder);
+    missing = wanted.filter((row) => !landedAs(present, row.file));
   } finally {
     stillMuted = await restore();
   }
@@ -1128,7 +1152,7 @@ async function exportReferenceFrames(sequenceRef, jobs, folder, size, isolateTra
   const frames = wanted.map((row) => ({
     key: row.key, probe: row.probe, file: row.file,
     ok: !!landedAs(present, row.file),
-    retried: missing.indexOf(row) !== -1,
+    retried: retried.has(row),
     error: landedAs(present, row.file) ? null : (row.error || "the frame never appeared on disk")
   }));
   // A track left muted is the one failure here that damages the edit rather

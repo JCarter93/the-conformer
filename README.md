@@ -341,6 +341,12 @@ Three details that cost a debugging round each:
   and three clips came back "inconclusive" — which reads like hard-to-match
   footage, not like a bug. The render step now waits for the frames to appear,
   and the panel says so out loud when a kit is short.
+- **Missing frames are retried one at a time, while it helps.** On Windows 25
+  in a GPU-less VM, Premiere reported success for frames that never reached
+  disk: 8–9 of 21 landed on the first pass, and one back-to-back re-render left
+  five missing for good. Retries now render each missing frame and wait for it
+  before the next, round after round while a round lands anything — the same
+  VM then landed 24 of 24.
 - **Two probes can render the identical frame.** Measured: byte-identical PNGs
   at +0.12s and +0.48s of a 15.9s shot, reproducibly, because the head of that
   shot is held. Two identical frames are one vote counted twice, and the whole
