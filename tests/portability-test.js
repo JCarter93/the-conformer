@@ -17,7 +17,7 @@
 var passed = 0, failed = 0;
 function ok(cond, label) { if (cond) passed++; else { failed++; print("FAIL  " + label); } }
 
-var PANEL_FILES = ["js/app.js", "js/ppro.js", "js/plan.js", "js/helper.js", "js/prefs.js", "index.html"];
+var PANEL_FILES = ["js/app.js", "js/ppro.js", "js/plan.js", "js/helper.js", "js/prefs.js", "js/naming.js", "js/log.js", "index.html"];
 var HELPERS = ["helper/conform_helper.py", "helper/plan_conform.py",
                "helper/find_offsets.py", "helper/verify_offsets.py"];
 

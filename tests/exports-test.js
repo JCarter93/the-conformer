@@ -49,8 +49,18 @@ function stripNoise(src) {
 
 /** The names a module actually exports. */
 function exportsOf(path) {
-  var src = stripNoise(readFile(path));
-  var at = src.indexOf("module.exports");
+  var raw = readFile(path);
+  var src = stripNoise(raw);
+  // `module.exports = api;` (naming.js, shared with The Onliner): read the
+  // object literal that name was declared with. From the RAW text - a regex
+  // holding a quote (toFileStem's /[\/\\:*?"<>|]/) sends stripNoise's string
+  // tracking off the rails and it blanks the rest of the file.
+  var named = /module\.exports\s*=\s*([A-Za-z_$][\w$]*)\s*;/.exec(raw);
+  if (named && raw.indexOf("var " + named[1] + " = {") !== -1) {
+    src = raw;
+  }
+  var at = named ? src.indexOf("var " + named[1] + " = {") : src.indexOf("module.exports");
+  if (at === -1) at = src.indexOf("module.exports");
   if (at === -1) return [];
   var open = src.indexOf("{", at), depth = 0, k = open;
   for (; k < src.length; k++) {
@@ -73,7 +83,7 @@ function callsOn(src, alias) {
 
 var app = stripNoise(readFile("js/app.js"));
 
-[["ppro", "js/ppro.js"], ["plan", "js/plan.js"], ["helper", "js/helper.js"], ["prefs", "js/prefs.js"]]
+[["ppro", "js/ppro.js"], ["plan", "js/plan.js"], ["helper", "js/helper.js"], ["prefs", "js/prefs.js"], ["naming", "js/naming.js"], ["runlog", "js/log.js"]]
   .forEach(function (pair) {
     var alias = pair[0], path = pair[1];
     var exported = exportsOf(path);

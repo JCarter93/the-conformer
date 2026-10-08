@@ -503,6 +503,27 @@ Premiere clamps to the nearest keyframe and the parameter reads flat while still
 reporting the right keyframe count. Nothing errors, so `tests/locked-access-test.js`
 asserts the rebase is still there.
 
+## Output names and the run log
+
+**The duplicate is versioned, never doubled.** "Conform onto a duplicate" names
+the new sequence `<offline>_GRADED` (or your suffix) and, when that is taken,
+`_GRADED_v02`, `_v03`... past the highest version already in the project,
+case-insensitively. The names are read when Conform is pressed, not at Check
+time, and the preview under Suffix shows the name that will be used. Before
+this, a second conform made a second sequence with exactly the same name.
+`js/naming.js` is the same module The Onliner uses.
+
+**Every Check and conform is logged** to `conformer.log` in the panel's own
+data folder - the report only ever existed on screen, so the only way to see
+why three stems "failed" on the first Premiere 2025 run was a screenshot:
+
+- Mac: `~/Library/Application Support/Adobe/UXP/PluginsStorage/PPRO/<ver>/External/theconformer/PluginData/conformer.log`
+- Windows: `%APPDATA%\Adobe\UXP\PluginsStorage\PPRO\<ver>\External\theconformer\PluginData\conformer.log`
+
+It records the inputs, the counts, every refusal and warning with its reason,
+what each pass placed, every failure with its error, and Check errors with the
+helper's last lines. It keeps the most recent ~512 KB and never stops a run.
+
 ## Reading the check report
 
 The report is grouped, and ordered by what the editor has to **do**: choose a

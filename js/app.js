@@ -20,6 +20,8 @@ const prefs = require("./js/prefs");
 const ppro = require("./js/ppro");
 const plan = require("./js/plan");
 const helper = require("./js/helper");
+const naming = require("./js/naming");
+const runlog = require("./js/log");
 
 const $ = (id) => document.getElementById(id);
 
@@ -179,6 +181,34 @@ function writeControls(settings) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// The run log
+// ---------------------------------------------------------------------------
+
+/**
+ * Append a line to conformer.log in the panel's own data folder.
+ *
+ * The report only exists on screen, and Premiere's UXP log does not see it: on
+ * the first Premiere 2025 run the three stems that "failed" could only be
+ * diagnosed by asking the editor to scroll the panel and send a screenshot.
+ * Every check and every conform now leaves its counts, refusals and errors
+ * here. Kept under LOG_MAX by dropping the oldest half; it never breaks a run.
+ *
+ * Mac:     ~/Library/Application Support/Adobe/UXP/PluginsStorage/PPRO/<ver>/External/theconformer/PluginData/conformer.log
+ * Windows: %APPDATA%\Adobe\UXP\PluginsStorage\PPRO\<ver>\External\theconformer\PluginData\conformer.log
+ */
+const LOG_MAX = 512 * 1024;
+// One write at a time, stamped at the call - see js/log.js for the race the
+// first version had (lines lost, times wrong).
+const logLine = runlog.makeLogger(async (entry) => {
+  const folder = await require("uxp").storage.localFileSystem.getDataFolder();
+  let file;
+  try { file = await folder.getEntry("conformer.log"); }
+  catch (e) { file = await folder.createFile("conformer.log", { overwrite: false }); }
+  const previous = runlog.trimLog(String((await file.read().catch(() => "")) || ""), LOG_MAX);
+  await file.write(previous + entry);
+});
+
 /** A blank suffix would name the conform exactly like its offline. */
 function effectiveSuffix() {
   const typed = String(state.settings.suffix || "").trim();
@@ -193,9 +223,18 @@ function sourceName() {
 function updateNamePreview() {
   const el = $("namePreview");
   if (!state.sourceId) { el.textContent = ""; return; }
-  el.textContent = state.settings.duplicateFirst
-    ? sourceName() + effectiveSuffix()
-    : "In place: " + sourceName();
+  if (!state.settings.duplicateFirst) { el.textContent = "In place: " + sourceName(); return; }
+  const planned = outputName(state.sequences.map((s) => s.name));
+  el.textContent = planned.name + (planned.collided ? " \u2014 that name is taken, versioned up" : "");
+}
+
+/**
+ * The duplicate's name: offline + suffix, versioned past anything already in
+ * the project (naming.js, shared with The Onliner). A second conform used to
+ * produce a second sequence with exactly the same name as the first.
+ */
+function outputName(existingNames) {
+  return naming.planName(sourceName(), effectiveSuffix(), existingNames);
 }
 
 // ---------------------------------------------------------------------------
@@ -458,6 +497,9 @@ async function check() {
   state.run = null;
   state.audioRun = null;
   state.clips = [];
+  logLine("CHECK start offline=" + sourceName() + " picture=" + v + " sound=" + a +
+          " graded=" + (v === "master" ? (state.masterFile && state.masterFile.nativePath) : (state.gradedFolder && state.gradedFolder.nativePath)) +
+          (a === "stems" ? " stems=" + (state.stemsFolder && state.stemsFolder.nativePath) : ""));
   setBusy(true, "Reading the timeline\u2026");
   try {
     // PICTURE, then SOUND. Planned separately because they answer different
@@ -477,6 +519,16 @@ async function check() {
                   (state.audioRun ? state.audioRun.placements.length : 0);
     setStatus(ready ? "Checked. " + ready + " ready to place."
                     : "Checked. Nothing can be placed - see the list.", ready ? null : "warn");
+    [["picture", state.run], ["sound", state.audioRun]].forEach((pair) => {
+      const r = pair[1];
+      if (!r) return;
+      logLine("CHECK " + pair[0] + " " + JSON.stringify(r.summary || {}) +
+              " unresolved=" + ((r.unresolved || []).length));
+      (r.refused || []).forEach((x) => logLine("CHECK " + pair[0] + " refused " +
+        (typeof x.start === "number" ? x.start.toFixed(2) + " " : "") + x.name + ": " + (x.reason || x.status || "")));
+      (r.placements || []).forEach((x) => (x.warnings || []).forEach((w) => logLine("CHECK " + pair[0] +
+        " warning " + (typeof x.start === "number" ? x.start.toFixed(2) + " " : "") + x.name + ": " + w)));
+    });
     if (state.run && state.run.versions) loadThumbs(state.run);
   } catch (e) {
     state.run = null;
@@ -486,6 +538,8 @@ async function check() {
     const detail = $("checkDetail");
     clear(detail);
     $("checkSummary").textContent = "Check failed \u2014 nothing here is current.";
+    logLine("CHECK error " + String(e.message || e) +
+            (e.log && e.log.length ? " | helper: " + e.log.slice(-8).join(" / ") : ""));
     line(detail, String(e.message || e), "warn");
     if (e.log && e.log.length) {
       line(detail, "The helper said:", "sublabel");
@@ -1047,12 +1101,17 @@ async function conform() {
   try {
     let targetId = state.sourceId;
     if (state.settings.duplicateFirst) {
+      // Names read NOW, not at check time - a conform since then may have
+      // taken the name the preview showed.
+      const planned = outputName((await ppro.listSequences()).map((s) => s.name));
       const clone = await ppro.cloneSequence(state.sourceId);
       targetId = clone.id;
-      targetName = sourceName() + effectiveSuffix();
+      targetName = planned.name;
       await ppro.renameSequence(targetId, targetName);
     }
     line(report, "Conforming onto: " + targetName, "sublabel");
+    logLine("CONFORM start onto=" + targetName + " picture=" + (vReady ? (v.mode === "master" ? "master" : "multiclip") : "none") +
+            " sound=" + (aReady ? "stems" : "none"));
 
     // The offline's own audio track count, before either pass adds any.
     const before = await ppro.readSequenceSpan(targetId);
@@ -1073,6 +1132,9 @@ async function conform() {
 
     const placed = (vResult ? vResult.placed.length : 0) + (aResult ? aResult.placed.length : 0);
     const failed = (vResult ? vResult.failed.length : 0) + (aResult ? aResult.failed.length : 0);
+    logConformResult("picture", vResult);
+    logConformResult("sound", aResult);
+    logLine("CONFORM done placed=" + placed + " failed=" + failed + " onto=" + targetName);
     const summary = await ppro.readTrackSummary(targetId);
     line(report, "The sequence now runs " + plan.formatSeconds(summary.durationSeconds) +
          " across " + summary.video.length + " video and " + summary.audio.length +
@@ -1083,9 +1145,23 @@ async function conform() {
   } catch (e) {
     line(report, String(e.message || e), "bad");
     setStatus(String(e.message || e), "bad");
+    logLine("CONFORM error " + String((e && (e.stack || e.message)) || e));
   } finally {
     setBusy(false);
   }
+}
+
+/** One pass's outcome into the log: every failure with its reason, by name. */
+function logConformResult(label, r) {
+  if (!r) return;
+  logLine("CONFORM " + label + " placed=" + r.placed.length + " failed=" + r.failed.length +
+          (typeof r.named === "number" ? " named=" + r.named : "") +
+          (r.muted && r.muted.length ? " muted=A1-A" + r.muted.length : "") +
+          (r.motion ? " motion=" + r.motion.applied + (r.motion.partial.length ? " partial=" + r.motion.partial.length : "") : ""));
+  r.failed.forEach((f) => logLine("CONFORM " + label + " FAILED " +
+    (typeof f.at === "number" ? f.at.toFixed(2) + " " : "") + f.name + ": " + f.error));
+  (r.audioErrors || []).forEach((f) => logLine("CONFORM " + label + " audio-strip " + f.name + ": " + f.error));
+  if (r.fatal) logLine("CONFORM " + label + " FATAL " + r.fatal);
 }
 
 function renderWholeRun(result, run) {
@@ -1644,6 +1720,9 @@ async function init() {
     await restoreGradedFolder();
     await refreshHelper();
     setStatus("Ready.");
+    let host = "?";
+    try { host = String(require("uxp").host.version); } catch (e) { /* report only */ }
+    logLine("PANEL loaded in Premiere " + host);
   } catch (e) {
     setStatus(String(e.message || e), "bad");
   }
