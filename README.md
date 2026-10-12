@@ -8,6 +8,51 @@ Raw UXP: plain HTML/CSS/JS loaded straight by Premiere. No Node, no bundler, no
 Anything needing ffmpeg or numpy runs in a small background helper — UXP has
 no subprocess capability at all — see "The helper" and "ffmpeg" below.
 
+## Testing and status — please read
+
+This was built for one post-production team's workflow and has been tested on
+that team's real jobs and on purpose-built test edits — not across the full
+range of machines, Premiere versions, cameras and grading houses it could meet.
+Treat it as working software that will still need tweaks, which is part of it
+being open source: if it misbehaves on your setup, that is useful information.
+Its design rule is to refuse rather than guess, so a cut it is unsure of is
+listed with a reason instead of being placed — but check the result before
+handing it on.
+
+**Exercised so far:**
+
+- **macOS, Premiere 26** (where it was built), on real jobs: 8K ProRes RAW
+  rushes, multi-track offlines, graded exports from DaVinci Resolve.
+- **macOS, Premiere 25.6.6**: a 16:9 test edit against 25p and 50p grades with
+  stems, and a real 9:16 offline with off-centre reframes.
+- **Windows 11, Premiere 25.6.6 and 26.5.2**: Check and conform on 16:9 and
+  9:16 test edits, including a clip on a hidden track, and stems on 25.6.6.
+  These ran in an ARM64 virtual machine without a GPU.
+- **About 1,000 automated assertions** on the logic that does not need
+  Premiere, plus Python tests that build small real media with ffmpeg and run
+  the helper's own planner and frame matcher (`scripts/run-tests.sh`).
+  Everything Premiere itself does was checked by hand.
+
+**Not yet exercised:** Windows on a regular x64 machine with a real GPU;
+Premiere versions outside 25.6–26.5; graded exports from tools other than
+DaVinci Resolve; NTSC or drop-frame timelines on a real job (the frame maths is
+unit-tested, but no real job has run at those rates). The newest checks — 9:16
+and off-centre reframe matching, retrying dropped reference frames — were
+verified on Windows 26.5.2 and macOS 25.6.6, not yet on macOS 26. Premiere's
+UXP API is young and changes between releases, and several things here work
+around behaviour measured on one specific build — a new release can break them.
+
+**Limits by design:** a retimed clip is listed, not placed, because the
+Premiere API cannot set a clip's speed; and Premiere snaps a clip's in-point to
+the sequence's frames, so a grade with handles that are not whole timeline
+frames is flagged (see "Premiere 2025").
+
+**Reporting a problem:** open an issue with your OS, the Premiere version (from
+About Premiere Pro), what you expected and what happened, and the run log —
+`conformer.log`, see "Output names and the run log" for where it is. The
+helper's own log (`helper.log`) helps too. Pull requests are welcome; please run
+`scripts/run-tests.sh` first.
+
 ## What is built
 
 All three modes from the brief, and **picture and sound are chosen
@@ -715,7 +760,7 @@ at a time.
 scripts/run-tests.sh
 ```
 
-Around 285 assertions, all pure logic under `jsc` — there is no Node on this
+About 1,000 assertions on pure logic under `jsc` — there is no Node on this
 machine, and the UXP runtime cannot be driven from outside.
 
 `plan-test.js` covers the placement decisions; `locked-access-test.js` is a
